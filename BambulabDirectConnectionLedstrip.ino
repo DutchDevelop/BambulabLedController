@@ -7,8 +7,11 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h> 
 
-#define MQTT_VERSION MQTT_VERSION_3_1_1
-#define MQTT_MAX_PACKET_SIZE 500 
+#define LED_PIN_R 5  // Red pin
+#define LED_PIN_G 14 // Green pin
+#define LED_PIN_B 4  // Blue pin
+#define LED_PIN_W 0  // White pin
+#define LED_PIN_WW 2 // Warm white pin
 
 //#define MQTT_MAX_PACKET_SIZE 256
 const char* wifiname = "Bambulab Led controller";
@@ -27,6 +30,9 @@ String Printerip;
 String Printercode;
 String PrinterID;
 
+int CurrentStage = -5;
+bool ledstate = false;
+
 ESP8266WebServer server(80);
 IPAddress apIP(192, 168, 1, 1);
 
@@ -43,6 +49,10 @@ String fillWithUnderscores(String text, int length) {
 String removeUnderscores(String text) {
     text.replace("_", "");
     return text;
+}
+
+void handleLed(){
+
 }
 
 void handleSetupRoot() {
@@ -149,32 +159,62 @@ void readeeprom(){
 }
 
 void PrinterCallback(char* topic, byte* payload, unsigned int length){
-  char payload_buffer[length + 1];
-  memcpy(payload_buffer, payload, length);
-  payload_buffer[length] = '\0';
+  Serial.print("Message arrived in topic: ");
+  Serial.println(topic);
+  Serial.print("Message:");
 
-  // Parse the JSON data
-  StaticJsonDocument<500> doc;
-  DeserializationError error = deserializeJson(doc, payload_buffer);
+  // Parse the JSON object
+  StaticJsonDocument<10000> doc;
+  DeserializationError error = deserializeJson(doc, payload, length);
 
+  // Check for parsing errors
   if (error) {
-    Serial.print("Failed to parse JSON payload: ");
+    Serial.print("deserializeJson() failed: ");
     Serial.println(error.c_str());
     return;
   }
 
-  Serial.println("Parsed JSON object:");
-  serializeJsonPretty(doc, Serial);
-  Serial.println();
+   if (!doc.containsKey("print")) {
+    return;
+  }
 
+  // Extract the "stg_cur" value
+  int stg_cur = doc["print"]["stg_cur"];
+
+  // Print the value
+  Serial.print("stg_cur: ");
+  Serial.println(stg_cur);
+
+  if (!doc["print"].containsKey("lights_report")) {
+    return;
+  }
+
+  bool cur_led = doc["print"]["lights_report"][0]["mode"] == "on";
+
+  // Print the value
+  Serial.print("cur_led: ");
+  Serial.println(cur_led);
+
+  Serial.println(" - - - - - - - - - - - -");
 }
 
 void setup() {
   Serial.begin(115200);
   EEPROM.begin(512);
 
-  WiFiClient.setInsecure();
+  pinMode(D8, INPUT_PULLUP);
+  if (digitalRead(D8) == HIGH) {
+    Serial.println("Clearing EEPROM");
+    for (int i = 0; i < 512; i++) {
+      EEPROM.write(i, 0);
+    }
+    EEPROM.commit();
+    Serial.println("EEPROM Cleared");
+  }
 
+  WiFiClient.setInsecure();
+  mqttClient.setBufferSize(10000);
+  
   WiFiManager wifiManager;
   wifiManager.autoConnect("MyESP8266");
 
