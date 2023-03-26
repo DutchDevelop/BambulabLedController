@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 void setLedColor(int redValue, int greenValue, int blueValue, int coldValue, int warmValue);
-void updateLeds();
+void setLedColor(int redValue, int greenValue, int blueValue, int coldValue, int warmValue);
+void transitionLedColor(int endR, int endG, int endB, int endC, int endW, int duration);
 
 #endif

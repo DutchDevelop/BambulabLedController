@@ -17,7 +17,6 @@ void setLedColor(int redValue, int greenValue, int blueValue, int coldValue, int
    transitionLedColor(redValue,greenValue,blueValue,coldValue,warmValue,100);
 }
 
-
 void setPins(int redValue, int greenValue, int blueValue, int coldValue, int warmValue) {
     pinMode(LED_PIN_R, OUTPUT);
     pinMode(LED_PIN_G, OUTPUT);
@@ -28,8 +27,8 @@ void setPins(int redValue, int greenValue, int blueValue, int coldValue, int war
     analogWrite(LED_PIN_R, redValue);
     analogWrite(LED_PIN_G, greenValue);
     analogWrite(LED_PIN_B, blueValue);
-    analogWrite(LED_PIN_W, blueValue);
-    analogWrite(LED_PIN_WW, coldValue);
+    analogWrite(LED_PIN_W, coldValue);
+    analogWrite(LED_PIN_WW, warmValue);
 }
 
 void transitionLedColor(int endR, int endG, int endB, int endC, int endW, int duration) {
@@ -50,9 +49,9 @@ void transitionLedColor(int endR, int endG, int endB, int endC, int endW, int du
         setPins(r, g, b, c, w);
         delay(stepTime);
     }
-    int startR = endR;
-    int startG = endG;
-    int startB = endB;
-    int startC = endC;
-    int startW = endW;
+    startR = endR;
+    startG = endG;
+    startB = endB;
+    startC = endC;
+    startW = endW;
 }

@@ -32,10 +32,13 @@ PubSubClient mqttClient(WiFiClient);
 
 void handleLed(){
   if (ledstate == 1){
-    if (CurrentStage == 0 || CurrentStage == -1){
+    if (CurrentStage == 0 || CurrentStage == -1 || CurrentStage == 2){
       setLedColor(0,0,0,255,255);
     };
-    if (CurrentStage == 1){
+    if (CurrentStage == 6 || CurrentStage == 17 || CurrentStage == 20 || CurrentStage == 21){
+      setLedColor(255,125,125,125,125);
+    };
+    if (CurrentStage == 14 || CurrentStage == 9){
       setLedColor(0,0,0,0,0);
     };
   }else{
@@ -136,8 +139,10 @@ void setup() {
   pinMode(D8, INPUT_PULLUP);
 
   if (digitalRead(D8) == HIGH) {
-    
+    clearEEPROM();
   }
+
+  setLedColor(0,0,0,0,0);
 
   WiFiClient.setInsecure();
   mqttClient.setBufferSize(10000);
@@ -194,6 +199,7 @@ void loop() {
         Serial.println(mqttTopic);
         mqttClient.subscribe(mqttTopic);     
       } else {
+        ledstate = false;
         Serial.print("failed, rc=");
         Serial.print(mqttClient.state());
         Serial.println(" try again in 5 seconds");
@@ -203,6 +209,5 @@ void loop() {
   } else {
     Serial.println("No printercode and or printer id present.");
   }
-  updateLeds();
   mqttClient.loop();
 }
