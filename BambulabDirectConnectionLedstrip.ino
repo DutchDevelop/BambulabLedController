@@ -1,36 +1,27 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 #include <ESP8266WebServer.h>
-#include <EEPROM.h>
+
 #include <WiFiManager.h>
 #include <string>
 #include <PubSubClient.h>
 #include <ArduinoJson.h> 
 
-#define LED_PIN_R 5  // Red pin
-#define LED_PIN_G 14 // Green pin
-#define LED_PIN_B 4  // Blue pin
-#define LED_PIN_W 0  // White pin
-#define LED_PIN_WW 2 // Warm white pin
+#include <EEPROM.h>
+#include "eeprom_utils.h"
+#include "led_utils.h"
+#include "variables.h"
 
 //#define MQTT_MAX_PACKET_SIZE 256
 const char* wifiname = "Bambulab Led controller";
 const char* setuppage = "<form method='POST' action='/setupmqtt'><label>IP: </label><input type='text' name='ip'><br><label>Access Code: </label><input type='text' name='code'><br><label>Serial ID: </label><input type='text' name='id'><br><input type='submit' value='Save'></form>";
 const char* finishedpage = "<h1>Successfully saved paramiters</h1>";
 
-int Max_ipLength = 15;
-int Max_accessCode = 8;
-int Max_DeviceId = 15;
-
-int Ip_Adress = 0;
-int Accesscode_Adress = 15;
-int DeviceId_Adress = 23;
-
 String Printerip;
 String Printercode;
 String PrinterID;
 
-int CurrentStage = -5;
+int CurrentStage = -1;
 bool ledstate = false;
 
 ESP8266WebServer server(80);
@@ -39,20 +30,17 @@ IPAddress apIP(192, 168, 1, 1);
 WiFiClientSecure WiFiClient;
 PubSubClient mqttClient(WiFiClient);
 
-String fillWithUnderscores(String text, int length) {
-    while (text.length() < length) {
-        text += "_";
-    }
-    return text;
-}
-
-String removeUnderscores(String text) {
-    text.replace("_", "");
-    return text;
-}
-
 void handleLed(){
-
+  if (ledstate == 1){
+    if (CurrentStage == 0 || CurrentStage == -1){
+      setLedColor(0,0,0,255,255);
+    };
+    if (CurrentStage == 1){
+      setLedColor(0,0,0,0,0);
+    };
+  }else{
+    setLedColor(0,0,0,0,0);
+  };
 }
 
 void handleSetupRoot() {
@@ -93,69 +81,10 @@ void savemqttdata() {
   Serial.println("Printer Id:");
   Serial.println(idarg);
 
-  iparg.replace(".","Q");
-  
-  String parsediparg = fillWithUnderscores(iparg,Max_ipLength);
-  String parsedcodearg = fillWithUnderscores(codearg,Max_accessCode);
-  String parsedID = fillWithUnderscores(idarg,Max_DeviceId);
-  
-  Serial.println(parsediparg);
-  Serial.println(parsedcodearg);
-  Serial.println(parsedID);
+  writeEEPROM(iparg,codearg,idarg);
 
-  Serial.println("Writing to eeprom");
-  
-  for (int i = 0; i < parsediparg.length(); i++) {
-    EEPROM.write(Ip_Adress + i , parsediparg[i]);
-  }
+  readEEPROM(Printerip,Printercode,PrinterID);
 
-  for (int i = 0; i < parsedcodearg.length(); i++) {
-    EEPROM.write(Accesscode_Adress + i, parsedcodearg[i]);
-  }
-
-  for (int i = 0; i < parsedID.length(); i++) {
-    EEPROM.write(DeviceId_Adress + i, parsedID[i]);
-  }
-
-  EEPROM.commit();
-
-  Serial.println("Finished Writing to eeprom");
-
-  readeeprom();
-}
-
-void readeeprom(){
-  Serial.println("Reading from eeprom");
-  String Parsedipeeprom = "";
-  for (int i = 0; i < Max_ipLength; i++) {
-    char c = EEPROM.read(Ip_Adress+i);
-    Parsedipeeprom += c;
-  }
-  String ipeeprom = removeUnderscores(Parsedipeeprom);
-  ipeeprom.replace("Q",".");
-
-  String Parsedcodeeprom = "";
-  for (int i = 0; i < Max_accessCode; i++) {
-    char c = EEPROM.read(Accesscode_Adress + i);
-    Parsedcodeeprom += c;
-  }
-  String codeeprom = removeUnderscores(Parsedcodeeprom);
-
-  String ParsedIdeeprom = "";
-  for (int i = 0; i < Max_DeviceId; i++) {
-    char c = EEPROM.read(DeviceId_Adress + i);
-    ParsedIdeeprom += c;
-  }
-  
-  String Ideeprom = removeUnderscores(ParsedIdeeprom);
-
-  Serial.println(ipeeprom);
-  Serial.println(codeeprom);
-  Serial.println(Ideeprom);
-
-  Printerip = ipeeprom;
-  Printercode = codeeprom;
-  PrinterID = Ideeprom;
 }
 
 void PrinterCallback(char* topic, byte* payload, unsigned int length){
@@ -179,23 +108,25 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){
   }
 
   // Extract the "stg_cur" value
-  int stg_cur = doc["print"]["stg_cur"];
+  CurrentStage = doc["print"]["stg_cur"];
 
   // Print the value
   Serial.print("stg_cur: ");
-  Serial.println(stg_cur);
+  Serial.println(CurrentStage);
 
   if (!doc["print"].containsKey("lights_report")) {
     return;
   }
 
-  bool cur_led = doc["print"]["lights_report"][0]["mode"] == "on";
+  ledstate = doc["print"]["lights_report"][0]["mode"] == "on";
 
   // Print the value
   Serial.print("cur_led: ");
-  Serial.println(cur_led);
+  Serial.println(ledstate);
 
   Serial.println(" - - - - - - - - - - - -");
+
+  handleLed();
 }
 
 void setup() {
@@ -203,13 +134,9 @@ void setup() {
   EEPROM.begin(512);
 
   pinMode(D8, INPUT_PULLUP);
+
   if (digitalRead(D8) == HIGH) {
-    Serial.println("Clearing EEPROM");
-    for (int i = 0; i < 512; i++) {
-      EEPROM.write(i, 0);
-    }
-    EEPROM.commit();
-    Serial.println("EEPROM Cleared");
+    
   }
 
   WiFiClient.setInsecure();
@@ -237,7 +164,7 @@ void setup() {
   Serial.print("Connected to WiFi, IP address: ");
   Serial.println(WiFi.localIP());
 
-  readeeprom();
+  readEEPROM(Printerip,Printercode,PrinterID);
   SetupWebpage();
 
   while (Printerip.length() == 0){
@@ -276,5 +203,6 @@ void loop() {
   } else {
     Serial.println("No printercode and or printer id present.");
   }
+  updateLeds();
   mqttClient.loop();
 }

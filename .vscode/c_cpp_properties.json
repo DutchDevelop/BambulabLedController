@@ -3,7 +3,11 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "C:\\Users\\DutchDeveloper\\AppData\\Local\\Arduino15\\**",
+                "C:\\Users\\DutchDeveloper\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\3.1.1\\libraries\\**",
+                "C:\\Users\\DutchDeveloper\\AppData\\Local\\Arduino15\\staging\\libraries\\**",
+                "C:\\Users\\DutchDeveloper\\Documents\\Arduino\\libraries\\**"
             ],
             "defines": [
                 "_DEBUG",
