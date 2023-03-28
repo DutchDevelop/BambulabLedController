@@ -1,18 +1,17 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 #include <ESP8266WebServer.h>
-
+#include <WiFiUdp.h>
 #include <WiFiManager.h>
+#include <ESP8266mDNS.h>
 #include <string>
 #include <PubSubClient.h>
 #include <ArduinoJson.h> 
-
 #include <EEPROM.h>
 #include "eeprom_utils.h"
 #include "led_utils.h"
 #include "variables.h"
 
-//#define MQTT_MAX_PACKET_SIZE 256
 const char* wifiname = "Bambulab Led controller";
 const char* setuppage = "<form method='POST' action='/setupmqtt'><label>IP: </label><input type='text' name='ip'><br><label>Access Code: </label><input type='text' name='code'><br><label>Serial ID: </label><input type='text' name='id'><br><input type='submit' value='Save'></form>";
 const char* finishedpage = "<h1>Successfully saved paramiters</h1>";
@@ -22,6 +21,7 @@ String Printercode;
 String PrinterID;
 
 int CurrentStage = -1;
+bool hasHMSerror = false;
 bool ledstate = false;
 
 ESP8266WebServer server(80);
@@ -30,12 +30,25 @@ IPAddress apIP(192, 168, 1, 1);
 WiFiClientSecure WiFiClient;
 PubSubClient mqttClient(WiFiClient);
 
-void handleLed(){
+bool CheckHMSCode(String jsonData) { //Function to check if the HMS jsonobject has the 131073 code, which i found coresponds to the frontcover falling off and fillament runout
+  StaticJsonDocument<200> doc;
+  deserializeJson(doc, jsonData);
+  JsonArray hmsArray = doc["hms"];
+  for (JsonObject hms : hmsArray) {
+    if (hms["code"] == 131073) {
+      return true;
+    }
+  }
+ 
+  return false;
+}
+
+void handleLed(){ //Function to handle ledstatus eg if the X1C has an error then make the ledstrip red, or when its scanning turn off the light until its starts printing
   if (ledstate == 1){
     if (CurrentStage == 0 || CurrentStage == -1 || CurrentStage == 2){
       setLedColor(0,0,0,255,255);
     };
-    if (CurrentStage == 6 || CurrentStage == 17 || CurrentStage == 20 || CurrentStage == 21){
+    if (CurrentStage == 6 || CurrentStage == 17 || CurrentStage == 20 || CurrentStage == 21 || hasHMSerror){
       setLedColor(255,125,125,125,125);
     };
     if (CurrentStage == 14 || CurrentStage == 9){
@@ -46,11 +59,11 @@ void handleLed(){
   };
 }
 
-void handleSetupRoot() {
+void handleSetupRoot() { //Function to handle the setuppage
   server.send(200, "text/html", setuppage);
 }
 
-void SetupWebpage(){
+void SetupWebpage(){ //Function to start webpage system
   Serial.println("Starting Web server");
   server.on("/", handleSetupRoot);
   server.on("/setupmqtt", savemqttdata);
@@ -58,7 +71,7 @@ void SetupWebpage(){
   Serial.println("Web server started");
 }
 
-void savemqttdata() {
+void savemqttdata() { //Function to handle given information from the setuppage and stores them into eeprom which then reads them from eeprom
   String iparg = server.arg("ip");
   String codearg = server.arg("code");
   String idarg = server.arg("id");  
@@ -90,16 +103,17 @@ void savemqttdata() {
 
 }
 
-void PrinterCallback(char* topic, byte* payload, unsigned int length){
+void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Function to handle the MQTT Data from the mqtt broker
+  if (length < 250) { //Ignore the MC_Print message
+    return;
+  }
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
   Serial.print("Message:");
 
-  // Parse the JSON object
   StaticJsonDocument<10000> doc;
   DeserializationError error = deserializeJson(doc, payload, length);
 
-  // Check for parsing errors
   if (error) {
     Serial.print("deserializeJson() failed: ");
     Serial.println(error.c_str());
@@ -110,10 +124,8 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){
     return;
   }
 
-  // Extract the "stg_cur" value
   CurrentStage = doc["print"]["stg_cur"];
 
-  // Print the value
   Serial.print("stg_cur: ");
   Serial.println(CurrentStage);
 
@@ -123,16 +135,20 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){
 
   ledstate = doc["print"]["lights_report"][0]["mode"] == "on";
 
-  // Print the value
   Serial.print("cur_led: ");
   Serial.println(ledstate);
+  
+  hasHMSerror = CheckHMSCode(doc["print"]);
+
+  Serial.print("HMS error: ");
+  Serial.println(hasHMSerror);
 
   Serial.println(" - - - - - - - - - - - -");
 
   handleLed();
 }
 
-void setup() {
+void setup() { // Setup function
   Serial.begin(115200);
   EEPROM.begin(512);
 
@@ -142,13 +158,16 @@ void setup() {
     clearEEPROM();
   }
 
-  setLedColor(0,0,0,0,0);
+  setPins(0,0,0,0,0);
 
   WiFiClient.setInsecure();
   mqttClient.setBufferSize(10000);
   
   WiFiManager wifiManager;
-  wifiManager.autoConnect("MyESP8266");
+  wifiManager.autoConnect(wifiname);
+
+  MDNS.begin("bambuledcontroller");
+  WiFi.hostname("bambuledcontroller");
 
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("Failed to connect to WiFi, creating access point...");
@@ -184,7 +203,7 @@ void setup() {
   mqttClient.setCallback(PrinterCallback);
 }
 
-void loop() {
+void loop() { //Loop function
   server.handleClient();
 
   if (Printercode.length() > 0 && PrinterID.length() > 0){

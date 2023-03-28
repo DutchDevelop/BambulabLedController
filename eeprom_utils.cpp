@@ -2,19 +2,19 @@
 #include "eeprom_utils.h"
 #include "variables.h"
 
-String fillWithUnderscores(String text, int length) {
+String fillWithUnderscores(String text, int length) { //Fills whitespace with underscores for eeprom to overwrite
     while (text.length() < length) {
         text += "_";
     }
     return text;
 }
 
-String removeUnderscores(String text) {
+String removeUnderscores(String text) { //Removes underscores from message
     text.replace("_", "");
     return text;
 }
 
-void readEEPROM(String &printerip, String &printercode, String &printerid) {
+void readEEPROM(String &printerip, String &printercode, String &printerid) { //Function to write the PrinterID, PrinterIP and AccessCode to the eeprom
   Serial.println("Reading from eeprom");
   String Parsedipeeprom = "";
   for (int i = 0; i < Max_ipLength; i++) {
@@ -48,7 +48,7 @@ void readEEPROM(String &printerip, String &printercode, String &printerid) {
   printerid = Ideeprom;
 }
 
-void writeEEPROM(String printerip, String printercode, String printerid) {
+void writeEEPROM(String printerip, String printercode, String printerid) { //Function to read the PrinterID, PrinterIP and AccessCode from the eeprom
     printerip.replace(".","Q");
   
     String parsediparg = fillWithUnderscores(printerip,Max_ipLength);
@@ -78,7 +78,7 @@ void writeEEPROM(String printerip, String printercode, String printerid) {
     Serial.println("Finished Writing to eeprom");
 }
 
-void clearEEPROM(){
+void clearEEPROM(){ //Incase eeprom gets messed up set pin 6 to high to clear data
     Serial.println("Clearing EEPROM");
     for (int i = 0; i < 512; i++) {
         EEPROM.write(i, 0);

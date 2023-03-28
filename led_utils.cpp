@@ -13,11 +13,14 @@ int startB = 0;
 int startC = 0;
 int startW = 0;
 
-void setLedColor(int redValue, int greenValue, int blueValue, int coldValue, int warmValue) {
+void setLedColor(int redValue, int greenValue, int blueValue, int coldValue, int warmValue) { //Function to change ledstrip color
+    if (redValue == startR && greenValue == startG && blueValue == startB && coldValue == startC && warmValue == startW) {
+        return;
+    }
    transitionLedColor(redValue,greenValue,blueValue,coldValue,warmValue,100);
 }
 
-void setPins(int redValue, int greenValue, int blueValue, int coldValue, int warmValue) {
+void setPins(int redValue, int greenValue, int blueValue, int coldValue, int warmValue) { //Function to change lestrip pins
     pinMode(LED_PIN_R, OUTPUT);
     pinMode(LED_PIN_G, OUTPUT);
     pinMode(LED_PIN_B, OUTPUT);
@@ -31,13 +34,13 @@ void setPins(int redValue, int greenValue, int blueValue, int coldValue, int war
     analogWrite(LED_PIN_WW, warmValue);
 }
 
-void transitionLedColor(int endR, int endG, int endB, int endC, int endW, int duration) {
-    float stepTime = (float)duration / 255.0; // Time between steps in milliseconds
-    int rStep = (endR - startR) / 255; // Step size for red component
-    int gStep = (endG - startG) / 255; // Step size for green component
-    int bStep = (endB - startB) / 255; // Step size for blue component
-    int cStep = (endC - startC) / 255; // Step size for cold white component
-    int wStep = (endW - startW) / 255; // Step size for warm white component
+void transitionLedColor(int endR, int endG, int endB, int endC, int endW, int duration) { //Function to tween color change
+    float stepTime = (float)duration / 255.0;
+    int rStep = (endR - startR) / 255;
+    int gStep = (endG - startG) / 255;
+    int bStep = (endB - startB) / 255;
+    int cStep = (endC - startC) / 255;
+    int wStep = (endW - startW) / 255;
     
     for (int i = 0; i < 256; i++) {
         int r = startR + i * rStep;
