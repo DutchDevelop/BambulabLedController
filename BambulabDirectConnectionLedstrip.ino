@@ -109,6 +109,7 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
   }
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
+  Serial.println(length);
   Serial.print("Message:");
 
   StaticJsonDocument<10000> doc;
@@ -211,6 +212,7 @@ void loop() { //Loop function
       Serial.println("Connecting to mqtt");
       if (mqttClient.connect("ESP8266-MQTT-c7fad005", "bblp", Printercode.c_str())){
         Serial.println("Connected to MQTT");
+        setLedColor(0,0,0,0,0); //Turn off led printer might be offline
         char mqttTopic[50];
         strcpy(mqttTopic, "device/");
         strcat(mqttTopic, PrinterID.c_str());
@@ -218,7 +220,7 @@ void loop() { //Loop function
         Serial.println(mqttTopic);
         mqttClient.subscribe(mqttTopic);     
       } else {
-        ledstate = false;
+        setLedColor(0,0,0,0,0); //Turn off led printer is offline and or the given information is wrong
         Serial.print("failed, rc=");
         Serial.print(mqttClient.state());
         Serial.println(" try again in 5 seconds");
