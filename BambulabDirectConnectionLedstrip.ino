@@ -46,7 +46,7 @@ String generateRandomString(int length) {
 void handleLed(){ //Function to handle ledstatus eg if the X1C has an error then make the ledstrip red, or when its scanning turn off the light until its starts printing
   if (ledstate == 1){
     if (CurrentStage == 6 || CurrentStage == 17 || CurrentStage == 20 || CurrentStage == 21 || hasHMSerror){
-      setLedColor(255,125,125,125,125);
+      setLedColor(255,0,0,0,0);
       return;
     };
     if (CurrentStage == 0 || CurrentStage == -1 || CurrentStage == 2){
