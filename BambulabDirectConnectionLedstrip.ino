@@ -30,29 +30,32 @@ IPAddress apIP(192, 168, 1, 1);
 WiFiClientSecure WiFiClient;
 PubSubClient mqttClient(WiFiClient);
 
-bool CheckHMSCode(String jsonData) { //Function to check if the HMS jsonobject has the 131073 code, which i found coresponds to the frontcover falling off and fillament runout
-  StaticJsonDocument<200> doc;
-  deserializeJson(doc, jsonData);
-  JsonArray hmsArray = doc["hms"];
-  for (JsonObject hms : hmsArray) {
-    if (hms["code"] == 131073) {
-      return true;
-    }
+String generateRandomString(int length) {
+  char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  int charsetLength = strlen(charset);
+
+  String randomString = "";
+  for (int i = 0; i < length; i++) {
+    int randomIndex = random(0, charsetLength);
+    randomString += charset[randomIndex];
   }
- 
-  return false;
+  
+  return randomString;
 }
 
 void handleLed(){ //Function to handle ledstatus eg if the X1C has an error then make the ledstrip red, or when its scanning turn off the light until its starts printing
   if (ledstate == 1){
-    if (CurrentStage == 0 || CurrentStage == -1 || CurrentStage == 2){
-      setLedColor(0,0,0,255,255);
-    };
     if (CurrentStage == 6 || CurrentStage == 17 || CurrentStage == 20 || CurrentStage == 21 || hasHMSerror){
       setLedColor(255,125,125,125,125);
+      return;
+    };
+    if (CurrentStage == 0 || CurrentStage == -1 || CurrentStage == 2){
+      setLedColor(0,0,0,255,255);
+      return;
     };
     if (CurrentStage == 14 || CurrentStage == 9){
       setLedColor(0,0,0,0,0);
+      return;
     };
   }else{
     setLedColor(0,0,0,0,0);
@@ -139,7 +142,13 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
   Serial.print("cur_led: ");
   Serial.println(ledstate);
   
-  hasHMSerror = CheckHMSCode(doc["print"]);
+  hasHMSerror = false;
+
+  for (const auto& hms : doc["print"]["hms"].as<JsonArray>()) {
+      if (hms["code"] == 131073) {
+        hasHMSerror = true;
+      };
+  }
 
   Serial.print("HMS error: ");
   Serial.println(hasHMSerror);
@@ -206,11 +215,15 @@ void setup() { // Setup function
 
 void loop() { //Loop function
   server.handleClient();
-
   if (Printercode.length() > 0 && PrinterID.length() > 0){
     if (!mqttClient.connected()) {
+      char DeviceName[50];
+      strcpy(DeviceName, "ESP8266-MQTT-");
+      strcat(DeviceName, generateRandomString(10).c_str());
+      Serial.print("Connecting with device name:");
+      Serial.println(DeviceName);
       Serial.println("Connecting to mqtt");
-      if (mqttClient.connect("ESP8266-MQTT-c7fad005", "bblp", Printercode.c_str())){
+      if (mqttClient.connect(DeviceName, "bblp", Printercode.c_str())){
         Serial.println("Connected to MQTT");
         setLedColor(0,0,0,0,0); //Turn off led printer might be offline
         char mqttTopic[50];
