@@ -29,6 +29,7 @@ ESP8266WebServer server(80);
 IPAddress apIP(192, 168, 1, 1);
 
 WiFiClientSecure WiFiClient;
+WiFiManager wifiManager;
 PubSubClient mqttClient(WiFiClient);
 
 String generateRandomString(int length) { //Function to generate random string for MQTT
@@ -174,7 +175,6 @@ void setup() { // Setup function
   WiFiClient.setInsecure();
   mqttClient.setBufferSize(10000);
   
-  WiFiManager wifiManager;
   wifiManager.autoConnect(wifiname);
 
   MDNS.begin("bambuledcontroller");
