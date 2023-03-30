@@ -11,10 +11,11 @@
 #include "eeprom_utils.h"
 #include "led_utils.h"
 #include "variables.h"
+#include "html.h"
 
 const char* wifiname = "Bambulab Led controller";
-const char* setuppage = "<form method='POST' action='/setupmqtt'><label>IP: </label><input type='text' name='ip'><br><label>Access Code: </label><input type='text' name='code'><br><label>Serial ID: </label><input type='text' name='id'><br><input type='submit' value='Save'></form>";
-const char* finishedpage = "<h1>Successfully saved paramiters</h1>";
+const char* setuppage = html_setuppage;
+const char* finishedpage = html_finishpage;
 
 String Printerip;
 String Printercode;
@@ -30,7 +31,7 @@ IPAddress apIP(192, 168, 1, 1);
 WiFiClientSecure WiFiClient;
 PubSubClient mqttClient(WiFiClient);
 
-String generateRandomString(int length) {
+String generateRandomString(int length) { //Function to generate random string for MQTT
   char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   int charsetLength = strlen(charset);
 
