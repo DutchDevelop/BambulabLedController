@@ -171,7 +171,7 @@ void setup() { // Setup function
   }
 
   setPins(0,0,0,0,0);
-
+  Serial.println("Starting...");
   WiFiClient.setInsecure();
   mqttClient.setBufferSize(10000);
   
