@@ -54,7 +54,6 @@ void writeEEPROM(String printerip, String printercode, String printerid) { //Fun
     String parsediparg = fillWithUnderscores(printerip,Max_ipLength);
     String parsedcodearg = fillWithUnderscores(printercode,Max_accessCode);
     String parsedID = fillWithUnderscores(printerid,Max_DeviceId);
-    int parsedallowip = Allow_Api ? 1 : 0;
     Serial.println(parsediparg);
     Serial.println(parsedcodearg);
     Serial.println(parsedID);

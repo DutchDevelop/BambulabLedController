@@ -49,24 +49,29 @@ String generateRandomString(int length) { //Function to generate random string f
 void handleLed(){ //Function to handle ledstatus eg if the X1C has an error then make the ledstrip red, or when its scanning turn off the light until its starts printing
   if (ledstate == 1){
     if (CurrentStage == 6 || CurrentStage == 17 || CurrentStage == 20 || CurrentStage == 21 || hasHMSerror){
+      Serial.println("Led IF A");
       setLedColor(255,0,0,0,0);
       return;
     };
     if (finishstartms > 0 && millis() - finishstartms <= 300000){
+      Serial.println("Led IF B");
       setLedColor(0,255,0,0,0);
       return;
     }else if(millis() - finishstartms > 300000){
       finishstartms = 0;
     }
     if (CurrentStage == 0 || CurrentStage == -1 || CurrentStage == 2){
+      Serial.println("Led IF C");
       setLedColor(0,0,0,255,255);
       return;
     };
     if (CurrentStage == 14 || CurrentStage == 9){
+      Serial.println("Led IF D");
       setLedColor(0,0,0,0,0);
       return;
     };
   }else{
+    Serial.println("Led IF E");
     setLedColor(0,0,0,0,0);
   };
 }
@@ -151,11 +156,11 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
   Serial.print("cur_led: ");
   Serial.println(ledstate);
 
-  //if (doc["print"]["gcode_state"] == "FINISH" && finishstartms <= 0){
-    //finishstartms = millis();
-  //}else if (doc["print"]["gcode_state"] != "FINISH" && finishstartms > 0){
-    //finishstartms = 0;
- // }
+  if (doc["print"]["gcode_state"] == "FINISH" && finishstartms <= 0){
+    finishstartms = millis();
+  }else if (doc["print"]["gcode_state"] != "FINISH" && finishstartms > 0){
+    finishstartms = 0;
+  }
   
   hasHMSerror = false;
 
