@@ -14,7 +14,7 @@ String removeUnderscores(String text) { //Removes underscores from message
     return text;
 }
 
-void readEEPROM(String &printerip, String &printercode, String &printerid) { //Function to write the PrinterID, PrinterIP and AccessCode to the eeprom
+void readEEPROM(String &printerip, String &printercode, String &printerid, bool &Allow_Api) { //Function to write the PrinterID, PrinterIP and AccessCode to the eeprom
   Serial.println("Reading from eeprom");
   String Parsedipeeprom = "";
   for (int i = 0; i < Max_ipLength; i++) {
@@ -48,13 +48,13 @@ void readEEPROM(String &printerip, String &printercode, String &printerid) { //F
   printerid = Ideeprom;
 }
 
-void writeEEPROM(String printerip, String printercode, String printerid) { //Function to read the PrinterID, PrinterIP and AccessCode from the eeprom
+void writeEEPROM(String printerip, String printercode, String printerid, bool Allow_Api) { //Function to read the PrinterID, PrinterIP and AccessCode from the eeprom
     printerip.replace(".","Q");
   
     String parsediparg = fillWithUnderscores(printerip,Max_ipLength);
     String parsedcodearg = fillWithUnderscores(printercode,Max_accessCode);
     String parsedID = fillWithUnderscores(printerid,Max_DeviceId);
-
+    int parsedallowip = Allow_Api ? 1 : 0;
     Serial.println(parsediparg);
     Serial.println(parsedcodearg);
     Serial.println(parsedID);
@@ -62,16 +62,18 @@ void writeEEPROM(String printerip, String printercode, String printerid) { //Fun
     Serial.println("Writing to eeprom");
 
     for (int i = 0; i < parsediparg.length(); i++) {
-    EEPROM.write(Ip_Adress + i , parsediparg[i]);
+      EEPROM.write(Ip_Adress + i , parsediparg[i]);
     }
 
     for (int i = 0; i < parsedcodearg.length(); i++) {
-    EEPROM.write(Accesscode_Adress + i, parsedcodearg[i]);
+      EEPROM.write(Accesscode_Adress + i, parsedcodearg[i]);
     }
 
     for (int i = 0; i < parsedID.length(); i++) {
-    EEPROM.write(DeviceId_Adress + i, parsedID[i]);
+      EEPROM.write(DeviceId_Adress + i, parsedID[i]);
     }
+
+    EEPROM.write(Allow_Api_Requests,parsedallowip);
 
     EEPROM.commit();
 
