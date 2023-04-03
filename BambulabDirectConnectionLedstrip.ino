@@ -25,6 +25,7 @@ bool Allow_Api = false;
 int CurrentStage = -1;
 bool hasHMSerror = false;
 bool ledstate = false;
+unsigned long finishstartms;
 
 ESP8266WebServer server(80);
 IPAddress apIP(192, 168, 1, 1);
@@ -52,6 +53,12 @@ void handleLed(){ //Function to handle ledstatus eg if the X1C has an error then
       setLedColor(255,0,0,0,0);
       return;
     };
+    if (finishstartms > 0 && millis() - finishstartms <= 300000){
+      setLedColor(0,255,0,0,0);
+      return;
+    }else if(millis() - finishstartms > 300000){
+      finishstartms = 0;
+    }
     if (CurrentStage == 0 || CurrentStage == -1 || CurrentStage == 2){
       setLedColor(0,0,0,255,255);
       return;
@@ -94,7 +101,7 @@ void savemqttdata() { //Function to handle given information from the setuppage 
   String iparg = server.arg("ip");
   String codearg = server.arg("code");
   String idarg = server.arg("id");  
-  Serial.println(server.arg("allowapi"));
+  //Serial.println(server.arg("allowapi"));
 
   if (iparg.length() == 0){
     return handleSetupRoot();
@@ -117,9 +124,9 @@ void savemqttdata() { //Function to handle given information from the setuppage 
   Serial.println("Printer Id:");
   Serial.println(idarg);
 
-  writeEEPROM(iparg,codearg,idarg,Allow_Api);
+  writeEEPROM(iparg,codearg,idarg);
 
-  readEEPROM(Printerip,Printercode,PrinterID,Allow_Api);
+  readEEPROM(Printerip,Printercode,PrinterID);
 
 }
 
@@ -158,6 +165,12 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
 
   Serial.print("cur_led: ");
   Serial.println(ledstate);
+
+  //if (doc["print"]["gcode_state"] == "FINISH" && finishstartms <= 0){
+    //finishstartms = millis();
+  //}else if (doc["print"]["gcode_state"] != "FINISH" && finishstartms > 0){
+    //finishstartms = 0;
+ // }
   
   hasHMSerror = false;
 
@@ -179,12 +192,7 @@ void setup() { // Setup function
   Serial.begin(115200);
   EEPROM.begin(512);
 
-  pinMode(D6, INPUT_PULLUP);
-
-  if (digitalRead(D6) == LOW) {
-    Serial.println("Clearing eeprom");
-    clearEEPROM();
-  }
+  //clearEEPROM();
 
   setPins(0,0,0,0,0);
   Serial.println("Starting...");
@@ -215,7 +223,7 @@ void setup() { // Setup function
   Serial.print("Connected to WiFi, IP address: ");
   Serial.println(WiFi.localIP());
 
-  readEEPROM(Printerip,Printercode,PrinterID,Allow_Api);
+  readEEPROM(Printerip,Printercode,PrinterID);
   SetupWebpage();
 
   while (Printerip.length() == 0){
@@ -247,6 +255,7 @@ void loop() { //Loop function
         strcpy(mqttTopic, "device/");
         strcat(mqttTopic, PrinterID.c_str());
         strcat(mqttTopic, "/report");
+        Serial.println("Topic: ");
         Serial.println(mqttTopic);
         mqttClient.subscribe(mqttTopic);     
       } else {
