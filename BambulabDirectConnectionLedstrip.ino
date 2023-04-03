@@ -3,7 +3,6 @@
 #include <ESP8266WebServer.h>
 #include <WiFiUdp.h>
 #include <WiFiManager.h>
-#include <ESP8266mDNS.h>
 #include <string>
 #include <PubSubClient.h>
 #include <ArduinoJson.h> 
@@ -33,45 +32,41 @@ WiFiClientSecure WiFiClient;
 WiFiManager wifiManager;
 PubSubClient mqttClient(WiFiClient);
 
-String generateRandomString(int length) { //Function to generate random string for MQTT
+char* generateRandomString(int length) {
   char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   int charsetLength = strlen(charset);
 
-  String randomString = "";
+  char* randomString = new char[length + 1];
   for (int i = 0; i < length; i++) {
     int randomIndex = random(0, charsetLength);
-    randomString += charset[randomIndex];
+    randomString[i] = charset[randomIndex];
   }
-  
+  randomString[length] = '\0';
+
   return randomString;
 }
 
 void handleLed(){ //Function to handle ledstatus eg if the X1C has an error then make the ledstrip red, or when its scanning turn off the light until its starts printing
   if (ledstate == 1){
     if (CurrentStage == 6 || CurrentStage == 17 || CurrentStage == 20 || CurrentStage == 21 || hasHMSerror){
-      Serial.println("Led IF A");
       setLedColor(255,0,0,0,0);
       return;
     };
     if (finishstartms > 0 && millis() - finishstartms <= 300000){
-      Serial.println("Led IF B");
       setLedColor(0,255,0,0,0);
       return;
     }else if(millis() - finishstartms > 300000){
-      finishstartms = 0;
+      finishstartms;
     }
     if (CurrentStage == 0 || CurrentStage == -1 || CurrentStage == 2){
-      Serial.println("Led IF C");
       setLedColor(0,0,0,255,255);
       return;
     };
     if (CurrentStage == 14 || CurrentStage == 9){
-      Serial.println("Led IF D");
       setLedColor(0,0,0,0,0);
       return;
     };
   }else{
-    Serial.println("Led IF E");
     setLedColor(0,0,0,0,0);
   };
 }
@@ -126,7 +121,6 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
   }
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
-  Serial.println(length);
   Serial.print("Message:");
 
   StaticJsonDocument<10000> doc;
@@ -195,7 +189,6 @@ void setup() { // Setup function
   
   wifiManager.autoConnect(wifiname);
 
-  MDNS.begin("bambuledcontroller");
   WiFi.hostname("bambuledcontroller");
 
   if (WiFi.status() != WL_CONNECTED) {
@@ -216,6 +209,11 @@ void setup() { // Setup function
 
   Serial.print("Connected to WiFi, IP address: ");
   Serial.println(WiFi.localIP());
+  Serial.println("-------------------------------------");
+  Serial.println("Headover to http://");
+  Serial.print(WiFi.localIP());
+  Serial.print(" To configure the mqtt settings.");
+  Serial.println("-------------------------------------");
 
   readEEPROM(Printerip,Printercode,PrinterID);
   SetupWebpage();
@@ -238,7 +236,8 @@ void loop() { //Loop function
     if (!mqttClient.connected()) {
       char DeviceName[50];
       strcpy(DeviceName, "ESP8266-MQTT-");
-      strcat(DeviceName, generateRandomString(10).c_str());
+      char* randomString = generateRandomString(10);
+      strcat(DeviceName, randomString);
       Serial.print("Connecting with device name:");
       Serial.println(DeviceName);
       Serial.println("Connecting to mqtt");
@@ -251,7 +250,7 @@ void loop() { //Loop function
         strcat(mqttTopic, "/report");
         Serial.println("Topic: ");
         Serial.println(mqttTopic);
-        mqttClient.subscribe(mqttTopic);     
+        mqttClient.subscribe(mqttTopic);
       } else {
         setLedColor(0,0,0,0,0); //Turn off led printer is offline and or the given information is wrong
         Serial.print("failed, rc=");
@@ -263,5 +262,6 @@ void loop() { //Loop function
   } else {
     Serial.println("No printercode and or printer id present.");
   }
+  //Serial.println(ESP.getFreeHeap());
   mqttClient.loop();
 }
