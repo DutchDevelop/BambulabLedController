@@ -21,7 +21,6 @@ String Printerip;
 String Printercode;
 String PrinterID;
 
-bool Allow_Api = false;
 int CurrentStage = -1;
 bool hasHMSerror = false;
 bool ledstate = false;
@@ -76,23 +75,10 @@ void handleSetupRoot() { //Function to handle the setuppage
   server.send(200, "text/html", setuppage);
 }
 
-void handleSetTemp(){
-  if (Allow_Api == false){
-    return server.send(200, "text/plain", "No permission");
-  };
-  if (server.args() == 1 && server.argName(0) == "heatbed") {
-    Serial.println(server.arg("heatbed").toFloat());
-    server.send(200, "text/plain", "OK");
-  } else {
-    server.send(400, "text/plain", "Bad Request");
-  }
-}
-
 void SetupWebpage(){ //Function to start webpage system
   Serial.println("Starting Web server");
   server.on("/", handleSetupRoot);
   server.on("/setupmqtt", savemqttdata);
-  server.on("/settemp", handleSetTemp);
   server.begin();
   Serial.println("Web server started");
 }
@@ -101,7 +87,6 @@ void savemqttdata() { //Function to handle given information from the setuppage 
   String iparg = server.arg("ip");
   String codearg = server.arg("code");
   String idarg = server.arg("id");  
-  //Serial.println(server.arg("allowapi"));
 
   if (iparg.length() == 0){
     return handleSetupRoot();
@@ -192,7 +177,11 @@ void setup() { // Setup function
   Serial.begin(115200);
   EEPROM.begin(512);
 
-  //clearEEPROM();
+  pinMode(D8, INPUT_PULLUP);
+
+  if (digitalRead(D8) == HIGH) {
+    clearEEPROM();
+  }
 
   setPins(0,0,0,0,0);
 

@@ -4,7 +4,7 @@
 const char* html_setuppage = "\
 <head>\
     <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css' integrity='sha512-ixlOZJxl8aj1Cz0mKjyFTJQx/s+U6wo0o6P+CZPRJX+gze3Jh8Fro/mTyLr5r/Vx+uV7J8RvRfZp5+X9fivG7A==' crossorigin='anonymous' referrerpolicy='no-referrer' />\
-        <style>\
+    <style>\
         body {\
             background-color: #f1f1f1;\
             font-family: Arial, sans-serif;\
@@ -52,56 +52,6 @@ const char* html_setuppage = "\
         form {\
             text-align: left;\
         }\
-        .toggle-switch {\
-            position: relative;\
-            display: inline-block;\
-            width: 60px;\
-            height: 34px;\
-        }\
-        .toggle-switch input {\
-            display: none;\
-        }\
-        .toggle-slider {\
-            position: absolute;\
-            cursor: pointer;\
-            top: 0;\
-            left: 0;\
-            right: 0;\
-            bottom: 0;\
-            background-color: #ccc;\
-            -webkit-transition: .4s;\
-            transition: .4s;\
-            border-radius: 34px;\
-        }\
-        .toggle-slider:before {\
-            position: absolute;\
-            content: '';\
-            height: 26px;\
-            width: 26px;\
-            left: 4px;\
-            bottom: 4px;\
-            background-color: white;\
-            -webkit-transition: .4s;\
-            transition: .4s;\
-            border-radius: 50%;\
-        }\
-        input:checked + .toggle-slider {\
-            background-color: #4CAF50;\
-        }\
-        input:checked + .toggle-slider:before {\
-            -webkit-transform: translateX(26px);\
-            -ms-transform: translateX(26px);\
-            transform: translateX(26px);\
-        }\
-        label.checkbox-label {\
-            display: flex;\
-            align-items: center;\
-            gap: 10px;\
-            margin-bottom: 5px;\
-            font-weight: bold;\
-            font-size: 16px;\
-            color: #333;\
-        }\
     </style>\
 </head>\
 <body>\
@@ -118,13 +68,6 @@ const char* html_setuppage = "\
                 <input type='text' name='code' title='Enter the access code for your MQTT broker'><br>\
                 <label>Serial ID:</label>\
                 <input type='text' name='id' title='Enter the serial ID for your device'><br>\
-                <label class='checkbox-label'>\
-                    <label class='toggle-switch'>\
-                        <input type='checkbox' name='toggle' title='Allow Api Request to change paramiters on your 3d printer'>\
-                        <span class='toggle-slider'></span>\
-                    </label>\
-                     Allow Api Requests\
-                </label><br>\
                 <input type='submit' value='Save'>\
             </form>\
         </div>\
