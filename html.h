@@ -63,11 +63,11 @@ const char* html_setuppage = "\
             </p>\
             <form method='POST' action='/setupmqtt'>\
                 <label>IP:</label>\
-                <input type='text' name='ip' title='Enter the IP address of your MQTT broker'><br>\
+                <input type='text' name='ip' title='Enter the IP address of your MQTT broker' value='ipinputvalue'><br>\
                 <label>Access Code:</label>\
-                <input type='text' name='code' title='Enter the access code for your MQTT broker'><br>\
+                <input type='text' name='code' title='Enter the access code for your MQTT broker' value='codeinputvalue'><br>\
                 <label>Serial ID:</label>\
-                <input type='text' name='id' title='Enter the serial ID for your device'><br>\
+                <input type='text' name='id' title='Enter the serial ID for your device' value='idinputvalue'><br>\
                 <input type='submit' value='Save'>\
             </form>\
         </div>\

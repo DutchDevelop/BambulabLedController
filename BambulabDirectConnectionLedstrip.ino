@@ -72,7 +72,22 @@ void handleLed(){ //Function to handle ledstatus eg if the X1C has an error then
   };
 }
 
+void replaceSubstring(char* string, const char* substring, const char* newSubstring) {
+    char* substringStart = strstr(string, substring);
+    if (substringStart) {
+        char* substringEnd = substringStart + strlen(substring);
+        memmove(substringStart + strlen(newSubstring), substringEnd, strlen(substringEnd) + 1);
+        memcpy(substringStart, newSubstring, strlen(newSubstring));
+    }
+}
+
 void handleSetupRoot() { //Function to handle the setuppage
+  if (!server.authenticate("bl", "ledcontroller")) {
+    return server.requestAuthentication();
+  }
+  replaceSubstring((char*)setuppage, "ipinputvalue", (std::string(Printerip.c_str())).c_str());
+  replaceSubstring((char*)setuppage, "idinputvalue", (std::string(PrinterID.c_str())).c_str());
+  replaceSubstring((char*)setuppage, "codeinputvalue", (std::string(Printercode.c_str())).c_str());
   server.send(200, "text/html", setuppage);
 }
 
@@ -177,11 +192,7 @@ void setup() { // Setup function
   Serial.begin(115200);
   EEPROM.begin(512);
 
-  pinMode(D8, INPUT_PULLUP);
-
-  if (digitalRead(D8) == HIGH) {
-    clearEEPROM();
-  }
+  //clearEEPROM();
 
   setPins(0,0,0,0,0);
 
