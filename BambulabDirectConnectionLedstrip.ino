@@ -16,10 +16,10 @@ const char* wifiname = "Bambulab Led controller";
 const char* setuppage = html_setuppage;
 const char* finishedpage = html_finishpage;
 
-char Printerip[Max_ipLength+1];
-char Printercode[Max_accessCode+1]; 
-char PrinterID[Max_DeviceId+1];
-char EspPassword[Max_EspPassword+1];
+char Printerip[Max_ipLength+1] = "";
+char Printercode[Max_accessCode+1] = ""; 
+char PrinterID[Max_DeviceId+1] = "";
+char EspPassword[Max_EspPassword+1] = "";
 
 int CurrentStage = -1;
 bool hasHMSerror = false;
@@ -132,9 +132,9 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
   if (length < 500) { //Ignore the MC_Print message
     return;
   }
-  //Serial.print("Message arrived in topic: ");
-  //Serial.println(topic);
-  //Serial.print("Message:");
+  Serial.print("Message arrived in topic: ");
+  Serial.println(topic);
+  Serial.print("Message:");
 
   StaticJsonDocument<11000> doc;
   DeserializationError error = deserializeJson(doc, payload, length);
@@ -151,8 +151,8 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
 
   CurrentStage = doc["print"]["stg_cur"];
 
-  //Serial.print("stg_cur: ");
-  //Serial.println(CurrentStage);
+  Serial.print("stg_cur: ");
+  Serial.println(CurrentStage);
 
   if (doc["print"]["gcode_state"] == "FINISH" && finishstartms <= 0){
     finishstartms = millis();
@@ -168,8 +168,8 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
       };
   }
 
- // Serial.print("HMS error: ");
- // Serial.println(hasHMSerror);
+  Serial.print("HMS error: ");
+  Serial.println(hasHMSerror);
 
   if (!doc["print"].containsKey("lights_report")) {
     return;
@@ -177,11 +177,11 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
 
   ledstate = doc["print"]["lights_report"][0]["mode"] == "on";
 
-  //Serial.print("cur_led: ");
- // Serial.println(ledstate);
+  Serial.print("cur_led: ");
+  Serial.println(ledstate);
 
 
- // Serial.println(" - - - - - - - - - - - -");
+  Serial.println(" - - - - - - - - - - - -");
 
   handleLed();
 }
@@ -219,11 +219,17 @@ void setup() { // Setup function
 
   readFromEEPROM(Printerip,Printercode,PrinterID,EspPassword);
 
-  if (strlen(EspPassword) == 0) {
-    Serial.print("No Password has been set, Resetting");
-    char* newEspPassword = generateRandomString(Max_EspPassword);
+  if (strchr(EspPassword, '#') == NULL) { //Isue with eeprom giving �, so adding a # to check if the eeprom is empty or not
+    Serial.println("No Password has been set, Resetting");
+    memset(EspPassword, 0, Max_EspPassword);
+    memset(Printercode, '_', Max_accessCode);
+    memset(PrinterID, '_', Max_DeviceId);
+    memset(Printerip, '_', Max_ipLength);
+    char* newEspPassword = generateRandomString(Max_EspPassword-1);
+    strcat(newEspPassword, "#");
     strcat(EspPassword, newEspPassword);
     writeToEEPROM(Printerip, Printercode, PrinterID, EspPassword);
+    readFromEEPROM(Printerip,Printercode,PrinterID,EspPassword); //This will auto clear the eeprom
   };
 
   Serial.print("Connected to WiFi, IP address: ");
@@ -238,24 +244,13 @@ void setup() { // Setup function
 
   SetupWebpage();
 
-  Serial.println(Printerip);
-  Serial.println(strlen(Printerip));
-
-  while (strlen(Printerip) == 0){
-    delay(1000);
-    Serial.println("Waiting for printer IP");
-  }
-
-  Serial.println("Has Ip starting mqtt server");
-
   mqttClient.setServer(Printerip, 8883);
-  Serial.println(Printerip);
   mqttClient.setCallback(PrinterCallback);
 }
 
 void loop() { //Loop function
   server.handleClient();
-  if (lastmqttconnectionattempt <= 0 || millis() - lastmqttconnectionattempt >= 5000){
+  if (strlen(Printerip) > 0 && (lastmqttconnectionattempt <= 0 || millis() - lastmqttconnectionattempt >= 5000)){
     if (!mqttClient.connected()) {
       char DeviceName[50];
       strcpy(DeviceName, "ESP8266-MQTT-");
