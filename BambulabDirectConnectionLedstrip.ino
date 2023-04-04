@@ -16,10 +16,10 @@ const char* wifiname = "Bambulab Led controller";
 const char* setuppage = html_setuppage;
 const char* finishedpage = html_finishpage;
 
-String Printerip;
-String Printercode;
-String PrinterID;
-String EspPassword;
+char Printerip[Max_ipLength+1];
+char Printercode[Max_accessCode+1]; 
+char PrinterID[Max_DeviceId+1];
+char EspPassword[Max_EspPassword+1];
 
 int CurrentStage = -1;
 bool hasHMSerror = false;
@@ -83,12 +83,12 @@ void replaceSubstring(char* string, const char* substring, const char* newSubstr
 }
 
 void handleSetupRoot() { //Function to handle the setuppage
-  if (!server.authenticate("BLLC", EspPassword.c_str())) {
+  if (!server.authenticate("BLLC", EspPassword)) {
     return server.requestAuthentication();
   }
-  replaceSubstring((char*)setuppage, "ipinputvalue", (std::string(Printerip.c_str())).c_str());
-  replaceSubstring((char*)setuppage, "idinputvalue", (std::string(PrinterID.c_str())).c_str());
-  replaceSubstring((char*)setuppage, "codeinputvalue", (std::string(Printercode.c_str())).c_str());
+  replaceSubstring((char*)setuppage, "ipinputvalue", Printerip);
+  replaceSubstring((char*)setuppage, "idinputvalue", PrinterID);
+  replaceSubstring((char*)setuppage, "codeinputvalue", Printercode);
   server.send(200, "text/html", setuppage);
 }
 
@@ -100,22 +100,19 @@ void SetupWebpage(){ //Function to start webpage system
   Serial.println("Web server started");
 }
 
-void savemqttdata() { //Function to handle given information from the setuppage and stores them into eeprom which then reads them from eeprom
-  String iparg = server.arg("ip");
-  String codearg = server.arg("code");
-  String idarg = server.arg("id");  
+void savemqttdata() {
+  char iparg[Max_ipLength + 1];
+  char codearg[Max_accessCode + 1];
+  char idarg[Max_DeviceId + 1];
 
-  if (iparg.length() == 0){
-    return handleSetupRoot();
-  };
+  // Copy the arguments from server to char arrays
+  server.arg("ip").toCharArray(iparg, Max_ipLength + 1);
+  server.arg("code").toCharArray(codearg, Max_accessCode + 1);
+  server.arg("id").toCharArray(idarg, Max_DeviceId + 1);
 
-  if (codearg.length() == 0){
+  if (strlen(iparg) == 0 || strlen(codearg) == 0 || strlen(idarg) == 0) {
     return handleSetupRoot();
-  };
-
-  if (idarg.length() == 0){
-    return handleSetupRoot();
-  };
+  }
 
   server.send(200, "text/html", finishedpage);
 
@@ -126,11 +123,10 @@ void savemqttdata() { //Function to handle given information from the setuppage 
   Serial.println("Printer Id:");
   Serial.println(idarg);
 
-  writeEEPROM(iparg,codearg,idarg,EspPassword);
-
-  readEEPROM(Printerip,Printercode,PrinterID,EspPassword);
-
+  writeToEEPROM(iparg, codearg, idarg, EspPassword);
+  readFromEEPROM(Printerip, Printercode, PrinterID, EspPassword);
 }
+
 
 void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Function to handle the MQTT Data from the mqtt broker
   if (length < 500) { //Ignore the MC_Print message
@@ -221,11 +217,13 @@ void setup() { // Setup function
     Serial.println("Connecting to Wi-Fi...");
   }
 
-  readEEPROM(Printerip,Printercode,PrinterID,EspPassword);
+  readFromEEPROM(Printerip,Printercode,PrinterID,EspPassword);
 
-  if (EspPassword.length() == 0){
-    EspPassword = String(generateRandomString(Max_EspPassword));
-    writeEEPROM(Printerip,Printercode,PrinterID,EspPassword);
+  if (strlen(EspPassword) == 0) {
+    Serial.print("No Password has been set, Resetting");
+    char* newEspPassword = generateRandomString(Max_EspPassword);
+    strcat(EspPassword, newEspPassword);
+    writeToEEPROM(Printerip, Printercode, PrinterID, EspPassword);
   };
 
   Serial.print("Connected to WiFi, IP address: ");
@@ -233,21 +231,25 @@ void setup() { // Setup function
   Serial.println("-------------------------------------");
   Serial.print("Head over to http://");
   Serial.println(WiFi.localIP());
-  Serial.println("Login Details User: BLLC, Password: " + EspPassword);
+  Serial.print("Login Details User: BLLC, Password: ");
+  Serial.println(String(EspPassword));
   Serial.println(" To configure the mqtt settings.");
   Serial.println("-------------------------------------");
 
   SetupWebpage();
 
-  while (Printerip.length() == 0){
+  Serial.println(Printerip);
+  Serial.println(strlen(Printerip));
+
+  while (strlen(Printerip) == 0){
     delay(1000);
     Serial.println("Waiting for printer IP");
   }
 
   Serial.println("Has Ip starting mqtt server");
 
-  mqttClient.setServer(Printerip.c_str(), 8883);
-  Serial.println(Printerip.c_str());
+  mqttClient.setServer(Printerip, 8883);
+  Serial.println(Printerip);
   mqttClient.setCallback(PrinterCallback);
 }
 
@@ -262,12 +264,12 @@ void loop() { //Loop function
       Serial.print("Connecting with device name:");
       Serial.println(DeviceName);
       Serial.println("Connecting to mqtt");
-      if (mqttClient.connect(DeviceName, "bblp", Printercode.c_str())){
+      if (mqttClient.connect(DeviceName, "bblp", Printercode)){
         Serial.println("Connected to MQTT");
         setLedColor(0,0,0,0,0); //Turn off led printer might be offline
         char mqttTopic[50];
         strcpy(mqttTopic, "device/");
-        strcat(mqttTopic, PrinterID.c_str());
+        strcat(mqttTopic, PrinterID);
         strcat(mqttTopic, "/report");
         Serial.println("Topic: ");
         Serial.println(mqttTopic);

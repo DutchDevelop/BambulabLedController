@@ -3,13 +3,6 @@
 
 #include <Arduino.h>
 
-extern String Printerip;
-extern String Printercode;
-extern String PrinterID;
-
-extern int CurrentStage;
-extern bool ledstate;
-
 const int Max_ipLength = 15;
 const int Max_accessCode = 8;
 const int Max_DeviceId = 15;
