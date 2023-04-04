@@ -24,6 +24,7 @@ int CurrentStage = -1;
 bool hasHMSerror = false;
 bool ledstate = false;
 unsigned long finishstartms;
+unsigned long lastmqttconnectionattempt;
 
 ESP8266WebServer server(80);
 IPAddress apIP(192, 168, 1, 1);
@@ -123,7 +124,7 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
   Serial.println(topic);
   Serial.print("Message:");
 
-  StaticJsonDocument<10000> doc;
+  StaticJsonDocument<11000> doc;
   DeserializationError error = deserializeJson(doc, payload, length);
 
   if (error) {
@@ -185,8 +186,8 @@ void setup() { // Setup function
   setPins(0,0,0,0,0);
 
   WiFiClient.setInsecure();
-  mqttClient.setBufferSize(10000);
-  
+  mqttClient.setBufferSize(11000);
+
   wifiManager.autoConnect(wifiname);
 
   WiFi.hostname("bambuledcontroller");
@@ -203,15 +204,15 @@ void setup() { // Setup function
   }
 
   while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
+    delay(10);
     Serial.println("Connecting to Wi-Fi...");
   }
 
   Serial.print("Connected to WiFi, IP address: ");
   Serial.println(WiFi.localIP());
   Serial.println("-------------------------------------");
-  Serial.println("Headover to http://");
-  Serial.print(WiFi.localIP());
+  Serial.print("Head over to http://");
+  Serial.println(WiFi.localIP());
   Serial.print(" To configure the mqtt settings.");
   Serial.println("-------------------------------------");
 
@@ -232,7 +233,7 @@ void setup() { // Setup function
 
 void loop() { //Loop function
   server.handleClient();
-  if (Printercode.length() > 0 && PrinterID.length() > 0){
+  if (lastmqttconnectionattempt <= 0 || millis() - lastmqttconnectionattempt >= 5000){
     if (!mqttClient.connected()) {
       char DeviceName[50];
       strcpy(DeviceName, "ESP8266-MQTT-");
@@ -251,17 +252,17 @@ void loop() { //Loop function
         Serial.println("Topic: ");
         Serial.println(mqttTopic);
         mqttClient.subscribe(mqttTopic);
+        lastmqttconnectionattempt;
       } else {
-        setLedColor(0,0,0,0,0); //Turn off led printer is offline and or the given information is wrong
+        setPins(0,0,0,0,0); //Turn off led printer is offline and or the given information is wrong
         Serial.print("failed, rc=");
         Serial.print(mqttClient.state());
         Serial.println(" try again in 5 seconds");
-        delay(5000);
+        lastmqttconnectionattempt = millis();
       }
     }
-  } else {
-    Serial.println("No printercode and or printer id present.");
   }
+  //Serial.print("Memory:");
   //Serial.println(ESP.getFreeHeap());
   mqttClient.loop();
 }

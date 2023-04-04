@@ -20,6 +20,19 @@ void setLedColor(int redValue, int greenValue, int blueValue, int coldValue, int
    transitionLedColor(redValue,greenValue,blueValue,coldValue,warmValue,100);
 }
 
+void pulseLedColor(int redValue, int greenValue, int blueValue, int coldValue, int warmValue) { //Function to change ledstrip color
+    if (redValue == startR && greenValue == startG && blueValue == startB && coldValue == startC && warmValue == startW) {
+        return;
+    }
+    int oldR = startR;
+    int oldG = startG;
+    int oldB = startB;
+    int oldC = startC;
+    int oldW = startW;
+    transitionLedColor(redValue,greenValue,blueValue,coldValue,warmValue,50);
+    transitionLedColor(oldR,oldG,oldB,oldC,oldW,50);
+}
+
 void setPins(int redValue, int greenValue, int blueValue, int coldValue, int warmValue) { //Function to change lestrip pins
     pinMode(LED_PIN_R, OUTPUT);
     pinMode(LED_PIN_G, OUTPUT);
