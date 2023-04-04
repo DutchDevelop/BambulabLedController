@@ -3,9 +3,9 @@
 
 #include <Arduino.h>
 
-void readEEPROM(String &printerip,String &printercode, String &printerid);
+void readEEPROM(String &printerip,String &printercode, String &printerid, String &EspPassword);
 
-void writeEEPROM(String printerip, String printercode, String printerid);
+void writeEEPROM(String printerip, String printercode, String printerid, String EspPassword);
 
 void clearEEPROM();
 

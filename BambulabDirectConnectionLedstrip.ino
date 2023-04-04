@@ -19,6 +19,7 @@ const char* finishedpage = html_finishpage;
 String Printerip;
 String Printercode;
 String PrinterID;
+String EspPassword;
 
 int CurrentStage = -1;
 bool hasHMSerror = false;
@@ -82,7 +83,7 @@ void replaceSubstring(char* string, const char* substring, const char* newSubstr
 }
 
 void handleSetupRoot() { //Function to handle the setuppage
-  if (!server.authenticate("bl", "ledcontroller")) {
+  if (!server.authenticate("BLLC", EspPassword.c_str())) {
     return server.requestAuthentication();
   }
   replaceSubstring((char*)setuppage, "ipinputvalue", (std::string(Printerip.c_str())).c_str());
@@ -125,19 +126,19 @@ void savemqttdata() { //Function to handle given information from the setuppage 
   Serial.println("Printer Id:");
   Serial.println(idarg);
 
-  writeEEPROM(iparg,codearg,idarg);
+  writeEEPROM(iparg,codearg,idarg,EspPassword);
 
-  readEEPROM(Printerip,Printercode,PrinterID);
+  readEEPROM(Printerip,Printercode,PrinterID,EspPassword);
 
 }
 
 void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Function to handle the MQTT Data from the mqtt broker
-  if (length < 250) { //Ignore the MC_Print message
+  if (length < 500) { //Ignore the MC_Print message
     return;
   }
-  Serial.print("Message arrived in topic: ");
-  Serial.println(topic);
-  Serial.print("Message:");
+  //Serial.print("Message arrived in topic: ");
+  //Serial.println(topic);
+  //Serial.print("Message:");
 
   StaticJsonDocument<11000> doc;
   DeserializationError error = deserializeJson(doc, payload, length);
@@ -154,17 +155,8 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
 
   CurrentStage = doc["print"]["stg_cur"];
 
-  Serial.print("stg_cur: ");
-  Serial.println(CurrentStage);
-
-  if (!doc["print"].containsKey("lights_report")) {
-    return;
-  }
-
-  ledstate = doc["print"]["lights_report"][0]["mode"] == "on";
-
-  Serial.print("cur_led: ");
-  Serial.println(ledstate);
+  //Serial.print("stg_cur: ");
+  //Serial.println(CurrentStage);
 
   if (doc["print"]["gcode_state"] == "FINISH" && finishstartms <= 0){
     finishstartms = millis();
@@ -180,10 +172,20 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
       };
   }
 
-  Serial.print("HMS error: ");
-  Serial.println(hasHMSerror);
+ // Serial.print("HMS error: ");
+ // Serial.println(hasHMSerror);
 
-  Serial.println(" - - - - - - - - - - - -");
+  if (!doc["print"].containsKey("lights_report")) {
+    return;
+  }
+
+  ledstate = doc["print"]["lights_report"][0]["mode"] == "on";
+
+  //Serial.print("cur_led: ");
+ // Serial.println(ledstate);
+
+
+ // Serial.println(" - - - - - - - - - - - -");
 
   handleLed();
 }
@@ -219,15 +221,22 @@ void setup() { // Setup function
     Serial.println("Connecting to Wi-Fi...");
   }
 
+  readEEPROM(Printerip,Printercode,PrinterID,EspPassword);
+
+  if (EspPassword.length() == 0){
+    EspPassword = String(generateRandomString(Max_EspPassword));
+    writeEEPROM(Printerip,Printercode,PrinterID,EspPassword);
+  };
+
   Serial.print("Connected to WiFi, IP address: ");
   Serial.println(WiFi.localIP());
   Serial.println("-------------------------------------");
   Serial.print("Head over to http://");
   Serial.println(WiFi.localIP());
-  Serial.print(" To configure the mqtt settings.");
+  Serial.println("Login Details User: BLLC, Password: " + EspPassword);
+  Serial.println(" To configure the mqtt settings.");
   Serial.println("-------------------------------------");
 
-  readEEPROM(Printerip,Printercode,PrinterID);
   SetupWebpage();
 
   while (Printerip.length() == 0){

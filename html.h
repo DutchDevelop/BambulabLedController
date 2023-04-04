@@ -57,9 +57,9 @@ const char* html_setuppage = "\
 <body>\
     <div class='container'>\
         <div class='form-container'>\
-            <h1>Bambulab LED Controller Setup Page</h1>\
+            <h1>BL LED Controller Setup Page</h1>\
             <p>\
-                This page allows you to set up your Bambulab LED controller by configuring your MQTT broker, access code, and serial ID.\
+                This page allows you to set up your BL LED controller by configuring your MQTT broker, access code, and serial ID.\
             </p>\
             <form method='POST' action='/setupmqtt'>\
                 <label>IP:</label>\
@@ -78,7 +78,7 @@ const char* html_finishpage = "\
 <!DOCTYPE html>\
 <html>\
 <head>\
-	<title>Bambulab LED Controller Setup</title>\
+	<title>BL LED Controller Setup</title>\
 	<style>\
 		body {\
 			background-color: #f1f1f1;\

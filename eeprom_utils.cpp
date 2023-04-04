@@ -14,7 +14,7 @@ String removeUnderscores(String text) { //Removes underscores from message
     return text;
 }
 
-void readEEPROM(String &printerip, String &printercode, String &printerid) { //Function to write the PrinterID, PrinterIP and AccessCode to the eeprom
+void readEEPROM(String &printerip, String &printercode, String &printerid, String &EspPassword) { //Function to write the PrinterID, PrinterIP and AccessCode to the eeprom
   Serial.println("Reading from eeprom");
   String Parsedipeeprom = "";
   for (int i = 0; i < Max_ipLength; i++) {
@@ -39,16 +39,24 @@ void readEEPROM(String &printerip, String &printercode, String &printerid) { //F
   
   String Ideeprom = removeUnderscores(ParsedIdeeprom);
 
+  String ParsedEspPassword = "";
+  for (int i = 0; i < Max_EspPassword; i++) {
+    char c = EEPROM.read(EspPassword_Adress + i);
+    ParsedEspPassword += c;
+  }
+
   Serial.println(ipeeprom);
   Serial.println(codeeprom);
   Serial.println(Ideeprom);
+  Serial.println(EspPassword);
 
+  EspPassword = ParsedEspPassword;
   printerip = ipeeprom;
   printercode = codeeprom;
   printerid = Ideeprom;
 }
 
-void writeEEPROM(String printerip, String printercode, String printerid) { //Function to read the PrinterID, PrinterIP and AccessCode from the eeprom
+void writeEEPROM(String printerip, String printercode, String printerid, String EspPassword) { //Function to read the PrinterID, PrinterIP and AccessCode from the eeprom
     printerip.replace(".","Q");
   
     String parsediparg = fillWithUnderscores(printerip,Max_ipLength);
@@ -70,6 +78,10 @@ void writeEEPROM(String printerip, String printercode, String printerid) { //Fun
 
     for (int i = 0; i < parsedID.length(); i++) {
     EEPROM.write(DeviceId_Adress + i, parsedID[i]);
+    }
+
+    for (int i = 0; i < EspPassword.length(); i++) {
+    EEPROM.write(EspPassword_Adress + i, EspPassword[i]);
     }
 
     EEPROM.commit();
