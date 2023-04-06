@@ -2,6 +2,7 @@
 #define HTML_H
 
 const char* html_setuppage = "\
+<!DOCTYPE html>\
 <head>\
     <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css' integrity='sha512-ixlOZJxl8aj1Cz0mKjyFTJQx/s+U6wo0o6P+CZPRJX+gze3Jh8Fro/mTyLr5r/Vx+uV7J8RvRfZp5+X9fivG7A==' crossorigin='anonymous' referrerpolicy='no-referrer' />\
     <style>\
@@ -21,6 +22,17 @@ const char* html_setuppage = "\
             border-radius: 10px;\
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);\
             width: 50%;\
+        }\
+        .upload-button {\
+            position: absolute;\
+            top: 10px;\
+            right: 10px;\
+            cursor: pointer;\
+            color: #ccc;\
+            font-size: 20px;\
+        }\
+        .upload-button:hover {\
+            color: #333;\
         }\
         label {\
             display: block;\
@@ -70,6 +82,53 @@ const char* html_setuppage = "\
                 <input type='text' name='id' title='Enter the serial ID for your device' value='idinputvalue'><br>\
                 <input type='submit' value='Save'>\
             </form>\
+            <label>Firmware Update:</label>\
+            <form method='POST' enctype='multipart/form-data' id='upload_form'>\
+                <input accept='.bin' class='input-file' id='file1' name='firmware' type='file'><br>\
+                <h3 id='uploadstatus'></h3>\
+                <input type='submit' value='Update'>\
+            </form>\
+            <script type='application/javascript'>\
+                function _(selector) {\
+                    return document.querySelector(selector);\
+                }\
+                var uploadForm = _('#upload_form');\
+                console.log(uploadForm);\
+                uploadForm.addEventListener('submit', function(event) {\
+                    event.preventDefault();\
+                    uploadFile();\
+                });\
+                function uploadFile() {\
+                    var fileInput = _('#file1');\
+                    console.log(fileInput);\
+                    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {\
+                        console.error('No file selected');\
+                        return;\
+                    }\
+                    var file = fileInput.files[0];\
+                    console.log(file);\
+                    var formdata = new FormData();\
+                    formdata.append('firmware', file, file.name);\
+                    var ajax = new XMLHttpRequest();\
+                    ajax.upload.addEventListener('progress', progressHandler, false);\
+                    ajax.open('POST', '/update');\
+                    ajax.setRequestHeader('Access-Control-Allow-Headers', '*');\
+                    ajax.setRequestHeader('Access-Control-Allow-Origin', '*');\
+                    ajax.addEventListener('load', completeHandler, false);\
+                    ajax.send(formdata);\
+                };\
+                function progressHandler(event) {\
+                    var percent = Math.round((event.loaded / event.total) * 100);\
+                    _('#uploadstatus').innerHTML = 'Uploading. ' + percent + '%';\
+                }\
+                function completeHandler(event) {\
+                    if (event.target.responseText.indexOf('error') >= 0) {\
+                        _('#status').innerHTML = event.target.responseText;\
+                    } else {\
+                        _('#status').innerHTML = 'Upload Success!';\
+                    }\
+                }\
+            </script>\
         </div>\
     </div>\
 </body>";

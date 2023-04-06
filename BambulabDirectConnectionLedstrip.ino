@@ -1,6 +1,8 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
+#include <ESP8266HTTPUpdateServer.h>
 #include <WiFiUdp.h>
 #include <WiFiManager.h>
 #include <string>
@@ -28,6 +30,7 @@ unsigned long finishstartms;
 unsigned long lastmqttconnectionattempt;
 
 ESP8266WebServer server(80);
+ESP8266HTTPUpdateServer httpUpdater;
 IPAddress apIP(192, 168, 1, 1);
 
 WiFiClientSecure WiFiClient;
@@ -92,12 +95,16 @@ void handleSetupRoot() { //Function to handle the setuppage
   server.send(200, "text/html", setuppage);
 }
 
+
 void SetupWebpage(){ //Function to start webpage system
+  MDNS.begin("blledcontroller");
   Serial.println("Starting Web server");
   server.on("/", handleSetupRoot);
   server.on("/setupmqtt", savemqttdata);
+  httpUpdater.setup(&server);
   server.begin();
   Serial.println("Web server started");
+  MDNS.addService("http", "tcp", 80);
 }
 
 void savemqttdata() {
@@ -134,6 +141,8 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
   }
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
+  Serial.print("Message Length: ");
+  Serial.println(length);
   Serial.print("Message:");
 
   StaticJsonDocument<11000> doc;
@@ -250,6 +259,7 @@ void setup() { // Setup function
 
 void loop() { //Loop function
   server.handleClient();
+  MDNS.update();
   if (strlen(Printerip) > 0 && (lastmqttconnectionattempt <= 0 || millis() - lastmqttconnectionattempt >= 5000)){
     if (!mqttClient.connected()) {
       char DeviceName[50];
