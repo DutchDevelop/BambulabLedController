@@ -82,7 +82,7 @@ const char* html_setuppage = "\
                 <input type='text' name='id' title='Enter the serial ID for your device' value='idinputvalue'><br>\
                 <input type='submit' value='Save'>\
             </form>\
-            <h3>Update BL Led Controller</h3>
+            <h3>Update BL Led Controller</h3>\
             <form method='GET' action='/update'>\
                 <h3>Update BL Led Controller</h3>\
                 <input type='submit' value='Update firmware'>\
