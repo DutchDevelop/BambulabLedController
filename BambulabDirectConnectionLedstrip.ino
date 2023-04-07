@@ -95,12 +95,19 @@ void handleSetupRoot() { //Function to handle the setuppage
   server.send(200, "text/html", setuppage);
 }
 
+void handleupdateroot() { //Function to handle the updatepage
+  if (!server.authenticate("BLLC", EspPassword)) {
+    return server.requestAuthentication();
+  }
+  server.send(200, "text/html", html_uploadpage);
+}
 
 void SetupWebpage(){ //Function to start webpage system
   MDNS.begin("blledcontroller");
   Serial.println("Starting Web server");
   server.on("/", handleSetupRoot);
   server.on("/setupmqtt", savemqttdata);
+  server.on("/update", HTTP_GET, handleupdateroot);
   httpUpdater.setup(&server);
   server.begin();
   Serial.println("Web server started");
