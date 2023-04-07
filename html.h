@@ -57,7 +57,6 @@ const char* html_setuppage = "\
             border-radius: 5px;\
             border: none;\
             cursor: pointer;\
-            margin-top: 20px;\
             font-size: 16px;\
             font-weight: bold;\
         }\
