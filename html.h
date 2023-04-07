@@ -84,7 +84,7 @@ const char* html_setuppage = "\
             </form>\
             <h3>Update BL Led Controller</h3>
             <form method='GET' action='/update'>\
-                <h3>Update BL Led Controller</h3>
+                <h3>Update BL Led Controller</h3>\
                 <input type='submit' value='Update firmware'>\
             </form>\
         </div>\
