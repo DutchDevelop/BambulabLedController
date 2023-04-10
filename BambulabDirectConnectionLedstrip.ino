@@ -102,12 +102,35 @@ void handleupdateroot() { //Function to handle the updatepage
   server.send(200, "text/html", html_uploadpage);
 }
 
+void handleSetTemperature() {
+  if (!server.hasArg("api_key")) {
+    return server.send(400, "text/plain", "Missing API key parameter.");
+  };
+
+  char received_api_key[5];
+  server.arg("api_key").toCharArray(received_api_key, 5);
+  if (!strcmp(received_api_key, EspPassword) == 0) {
+    return server.send(401, "text/plain", "Unauthorized access.");
+  }
+  char mqttTopic[50];
+  strcpy(mqttTopic, "device/");
+  strcat(mqttTopic, PrinterID);
+  strcat(mqttTopic, "/request");
+  if (server.hasArg("bedtemp")) {
+    float bedtemp = server.arg("bedtemp").toFloat();
+    String message = "{\"print\":{\"sequence_id\":\"2026\",\"command\":\"gcode_line\",\"param\":\"M140 S" + String(bedtemp) + "\\n\"}}";
+    Serial.println(message);
+    mqttClient.publish(mqttTopic, message.c_str());
+  }
+}
+
 void SetupWebpage(){ //Function to start webpage system
   MDNS.begin("blledcontroller");
   Serial.println("Starting Web server");
   server.on("/", handleSetupRoot);
-  server.on("/setupmqtt", savemqttdata);
+  server.on("/setupmqtt", HTTP_GET, savemqttdata);
   server.on("/update", HTTP_GET, handleupdateroot);
+  server.on("/settemp", HTTP_GET, handleSetTemperature);
   httpUpdater.setup(&server);
   server.begin();
   Serial.println("Web server started");
