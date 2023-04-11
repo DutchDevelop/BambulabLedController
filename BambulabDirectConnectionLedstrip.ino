@@ -147,7 +147,8 @@ void savemqttdata() {
   Serial.println(idarg);
 
   writeToEEPROM(iparg, codearg, idarg, EspPassword);
-  readFromEEPROM(Printerip, Printercode, PrinterID, EspPassword);
+  delay(1000); //wait for page to load
+  ESP.restart();
 }
 
 
