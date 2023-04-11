@@ -82,6 +82,28 @@ void replaceSubstring(char* string, const char* substring, const char* newSubstr
     }
 }
 
+void handleSetTemperature() {
+  if (!server.hasArg("api_key")) {
+    return server.send(400, "text/plain", "Missing API key parameter.");
+  };
+
+  char received_api_key[5];
+  server.arg("api_key").toCharArray(received_api_key, 5);
+  if (!strcmp(received_api_key, EspPassword) == 0) {
+    return server.send(401, "text/plain", "Unauthorized access.");
+  }
+  char mqttTopic[50];
+  strcpy(mqttTopic, "device/");
+  strcat(mqttTopic, PrinterID);
+  strcat(mqttTopic, "/request");
+  if (server.hasArg("bedtemp")) {
+    float bedtemp = server.arg("bedtemp").toFloat();
+    String message = "{\"print\":{\"sequence_id\":\"2026\",\"command\":\"gcode_line\",\"param\":\"M140 S" + String(bedtemp) + "\\n\"}}";
+    Serial.println(message);
+    mqttClient.publish(mqttTopic, message.c_str());
+  }
+}
+
 void handleSetupRoot() { //Function to handle the setuppage
   if (!server.authenticate("BLLC", EspPassword)) {
     return server.requestAuthentication();
@@ -96,6 +118,7 @@ void SetupWebpage(){ //Function to start webpage system
   Serial.println("Starting Web server");
   server.on("/", handleSetupRoot);
   server.on("/setupmqtt", savemqttdata);
+  server.on("/settemp", handleSetTemperature);
   server.begin();
   Serial.println("Web server started");
 }
