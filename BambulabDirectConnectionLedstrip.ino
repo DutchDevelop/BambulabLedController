@@ -86,10 +86,13 @@ void handleSetTemperature() {
   if (!server.hasArg("api_key")) {
     return server.send(400, "text/plain", "Missing API key parameter.");
   };
+  char shortened_key[7];
+  strncpy(shortened_key, EspPassword, 7);
+  shortened_key[7] = '\0'; 
+  char received_api_key[8];
 
-  char received_api_key[5];
-  server.arg("api_key").toCharArray(received_api_key, 5);
-  if (!strcmp(received_api_key, EspPassword) == 0) {
+  server.arg("api_key").toCharArray(received_api_key, 8);
+  if (!strcmp(received_api_key, shortened_key) == 0) {
     return server.send(401, "text/plain", "Unauthorized access.");
   }
   char mqttTopic[50];
@@ -99,9 +102,14 @@ void handleSetTemperature() {
   if (server.hasArg("bedtemp")) {
     float bedtemp = server.arg("bedtemp").toFloat();
     String message = "{\"print\":{\"sequence_id\":\"2026\",\"command\":\"gcode_line\",\"param\":\"M140 S" + String(bedtemp) + "\\n\"}}";
-    Serial.println(message);
     mqttClient.publish(mqttTopic, message.c_str());
   }
+  if (server.hasArg("nozzletemp")) {
+    float bedtemp = server.arg("nozzletemp").toFloat();
+    String message = "{\"print\":{\"sequence_id\":\"2026\",\"command\":\"gcode_line\",\"param\":\"M104 S" + String(bedtemp) + "\\n\"}}";
+    mqttClient.publish(mqttTopic, message.c_str());
+  }
+  return server.send(200, "text/plain", "Ok");
 }
 
 void handleSetupRoot() { //Function to handle the setuppage
