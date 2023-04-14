@@ -164,9 +164,9 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
   if (length < 500) { //Ignore the MC_Print message
     return;
   }
-  Serial.print("Message arrived in topic: ");
-  Serial.println(topic);
-  Serial.print("Message:");
+  //Serial.print("Message arrived in topic: ");
+  //Serial.println(topic);
+  //Serial.print("Message:");
 
   StaticJsonDocument<11000> doc;
   DeserializationError error = deserializeJson(doc, payload, length);
@@ -183,8 +183,8 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
 
   CurrentStage = doc["print"]["stg_cur"];
 
-  Serial.print("stg_cur: ");
-  Serial.println(CurrentStage);
+  //Serial.print("stg_cur: ");
+ // Serial.println(CurrentStage);
 
   if (doc["print"]["gcode_state"] == "FINISH" && finishstartms <= 0){
     finishstartms = millis();
@@ -200,8 +200,8 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
       };
   }
 
-  Serial.print("HMS error: ");
-  Serial.println(hasHMSerror);
+  //Serial.print("HMS error: ");
+  //Serial.println(hasHMSerror);
 
   if (!doc["print"].containsKey("lights_report")) {
     return;
@@ -209,11 +209,11 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
 
   ledstate = doc["print"]["lights_report"][0]["mode"] == "on";
 
-  Serial.print("cur_led: ");
-  Serial.println(ledstate);
+  //Serial.print("cur_led: ");
+  //Serial.println(ledstate);
 
 
-  Serial.println(" - - - - - - - - - - - -");
+  //Serial.println(" - - - - - - - - - - - -");
 
   handleLed();
 }
@@ -228,7 +228,6 @@ void setup() { // Setup function
 
   WiFiClient.setInsecure();
   mqttClient.setBufferSize(11000);
-
   wifiManager.autoConnect(wifiname);
 
   WiFi.hostname("bambuledcontroller");
