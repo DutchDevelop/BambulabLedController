@@ -12,8 +12,6 @@
 #include "variables.h"
 #include "html.h"
 
-#define MQTT_KEEPALIVE 120
-
 const char* wifiname = "Bambulab Led controller";
 const char* setuppage = html_setuppage;
 const char* finishedpage = html_finishpage;
@@ -22,7 +20,6 @@ char Printerip[Max_ipLength+1] = "";
 char Printercode[Max_accessCode+1] = ""; 
 char PrinterID[Max_DeviceId+1] = "";
 char EspPassword[Max_EspPassword+1] = "";
-char randomdevicestring[6] = "";
 
 int CurrentStage = -1;
 bool hasHMSerror = false;
@@ -150,12 +147,12 @@ void savemqttdata() {
 
   server.send(200, "text/html", finishedpage);
 
-  //Serial.println("Printer IP:");
-  //Serial.println(iparg);
-  //Serial.println("Printer Code:");
-  //Serial.println(codearg);
-  //Serial.println("Printer Id:");
-  //Serial.println(idarg);
+  Serial.println("Printer IP:");
+  Serial.println(iparg);
+  Serial.println("Printer Code:");
+  Serial.println(codearg);
+  Serial.println("Printer Id:");
+  Serial.println(idarg);
 
   writeToEEPROM(iparg, codearg, idarg, EspPassword);
   delay(1000); //wait for page to load
@@ -168,17 +165,20 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
     return;
   }
 
+<<<<<<< HEAD
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
   Serial.print("Message:");
 
 
+=======
+>>>>>>> parent of 9e28674 (fixed stack overflow issue)
   StaticJsonDocument<11000> doc;
   DeserializationError error = deserializeJson(doc, payload, length);
-  delay(50);
+
   if (error) {
-    //Serial.print("deserializeJson() failed: ");
-    //Serial.println(error.c_str());
+    Serial.print("deserializeJson() failed: ");
+    Serial.println(error.c_str());
     return;
   }
 
@@ -270,9 +270,6 @@ void setup() { // Setup function
     readFromEEPROM(Printerip,Printercode,PrinterID,EspPassword); //This will auto clear the eeprom
   };
 
-  char* newdevicestring = generateRandomString(6);
-  strcat(randomdevicestring, newdevicestring);
-
   Serial.print("Connected to WiFi, IP address: ");
   Serial.println(WiFi.localIP());
   Serial.println("-------------------------------------");
@@ -293,9 +290,10 @@ void loop() { //Loop function
   server.handleClient();
   if (strlen(Printerip) > 0 && (lastmqttconnectionattempt <= 0 || millis() - lastmqttconnectionattempt >= 5000)){
     if (!mqttClient.connected()) {
-      char DeviceName[20];
+      char DeviceName[50];
       strcpy(DeviceName, "ESP8266-MQTT-");
-      strcat(DeviceName, randomdevicestring);
+      char* randomString = generateRandomString(10);
+      strcat(DeviceName, randomString);
       Serial.print("Connecting with device name:");
       Serial.println(DeviceName);
       Serial.println("Connecting to mqtt");
