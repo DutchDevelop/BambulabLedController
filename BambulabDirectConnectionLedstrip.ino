@@ -286,13 +286,14 @@ void loop() { //Loop function
   server.handleClient();
   if (strlen(Printerip) > 0 && (lastmqttconnectionattempt <= 0 || millis() - lastmqttconnectionattempt >= 5000)){
     if (!mqttClient.connected()) {
-      char DeviceName[50];
+      char DeviceName[20];
       strcpy(DeviceName, "ESP8266-MQTT-");
-      char* randomString = generateRandomString(10);
+      char* randomString = generateRandomString(4);
       strcat(DeviceName, randomString);
       Serial.print("Connecting with device name:");
       Serial.println(DeviceName);
       Serial.println("Connecting to mqtt");
+      delay(10);
       if (mqttClient.connect(DeviceName, "bblp", Printercode)){
         Serial.println("Connected to MQTT");
         setLedColor(0,0,0,0,0); //Turn off led printer might be offline
@@ -302,6 +303,7 @@ void loop() { //Loop function
         strcat(mqttTopic, "/report");
         Serial.println("Topic: ");
         Serial.println(mqttTopic);
+        delay(10);
         mqttClient.subscribe(mqttTopic);
         lastmqttconnectionattempt;
       } else {
