@@ -1,7 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 #include <ESP8266WebServer.h>
-#include <WiFiUdp.h>
 #include <WiFiManager.h>
 #include <string>
 #include <PubSubClient.h>
@@ -169,7 +168,7 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
   Serial.println(topic);
   Serial.print("Message:");
 
-  StaticJsonDocument<11000> doc;
+  StaticJsonDocument<10000> doc;
   DeserializationError error = deserializeJson(doc, payload, length);
 
   if (error) {
@@ -229,7 +228,7 @@ void setup() { // Setup function
   setPins(0,0,0,0,0);
 
   WiFiClient.setInsecure();
-  mqttClient.setBufferSize(11000);
+  mqttClient.setBufferSize(10000);
 
   wifiManager.autoConnect(wifiname);
 
@@ -287,13 +286,14 @@ void loop() { //Loop function
   if (strlen(Printerip) > 0 && (lastmqttconnectionattempt <= 0 || millis() - lastmqttconnectionattempt >= 5000)){
     if (!mqttClient.connected()) {
       char DeviceName[20];
-      strcpy(DeviceName, "ESP8266-MQTT-");
+      strcpy(DeviceName, "ESP8266MQTT");
       char* randomString = generateRandomString(4);
       strcat(DeviceName, randomString);
+
       Serial.print("Connecting with device name:");
       Serial.println(DeviceName);
       Serial.println("Connecting to mqtt");
-      delay(10);
+      
       if (mqttClient.connect(DeviceName, "bblp", Printercode)){
         Serial.println("Connected to MQTT");
         setLedColor(0,0,0,0,0); //Turn off led printer might be offline
@@ -303,7 +303,6 @@ void loop() { //Loop function
         strcat(mqttTopic, "/report");
         Serial.println("Topic: ");
         Serial.println(mqttTopic);
-        delay(10);
         mqttClient.subscribe(mqttTopic);
         lastmqttconnectionattempt;
       } else {
