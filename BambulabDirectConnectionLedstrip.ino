@@ -165,14 +165,10 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
     return;
   }
 
-<<<<<<< HEAD
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
   Serial.print("Message:");
 
-
-=======
->>>>>>> parent of 9e28674 (fixed stack overflow issue)
   StaticJsonDocument<11000> doc;
   DeserializationError error = deserializeJson(doc, payload, length);
 
