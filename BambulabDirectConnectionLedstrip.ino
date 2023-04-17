@@ -166,6 +166,8 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
 
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
+  Serial.print("Message Length: ");
+  Serial.println(length);
   Serial.print("Message:");
 
   StaticJsonDocument<10000> doc;
