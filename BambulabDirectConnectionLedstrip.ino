@@ -285,6 +285,9 @@ void setup() { // Setup function
 
 void loop() { //Loop function
   server.handleClient();
+  if (WiFi.status() != WL_CONNECTED){
+    Serial.println("No Connection!");
+  }
   if (strlen(Printerip) > 0 && (lastmqttconnectionattempt <= 0 || millis() - lastmqttconnectionattempt >= 5000)){
     if (!mqttClient.connected()) {
       char DeviceName[20];
