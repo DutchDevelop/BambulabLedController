@@ -2,7 +2,7 @@
 #include <WiFiClientSecure.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>
-#include <string>
+#include <cstring>
 #include <PubSubClient.h>
 #include <ArduinoJson.h> 
 #include <EEPROM.h>
@@ -34,7 +34,7 @@ WiFiManager wifiManager;
 PubSubClient mqttClient(WiFiClient);
 
 char* generateRandomString(int length) {
-  char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  static const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   int charsetLength = strlen(charset);
 
   char* randomString = new char[length + 1];
@@ -122,12 +122,12 @@ void handleSetupRoot() { //Function to handle the setuppage
 }
 
 void SetupWebpage(){ //Function to start webpage system
-  Serial.println("Starting Web server");
+  Serial.println(F("Starting Web server"));
   server.on("/", handleSetupRoot);
   server.on("/setupmqtt", savemqttdata);
-  server.on("/settemp", handleSetTemperature);
+ // server.on("/settemp", handleSetTemperature);
   server.begin();
-  Serial.println("Web server started");
+  Serial.println(F("Web server started"));
 }
 
 void savemqttdata() {
@@ -146,11 +146,11 @@ void savemqttdata() {
 
   server.send(200, "text/html", finishedpage);
 
-  Serial.println("Printer IP:");
+  Serial.println(F("Printer IP:"));
   Serial.println(iparg);
-  Serial.println("Printer Code:");
+  Serial.println(F("Printer Code:"));
   Serial.println(codearg);
-  Serial.println("Printer Id:");
+  Serial.println(F("Printer Id:"));
   Serial.println(idarg);
 
   writeToEEPROM(iparg, codearg, idarg, EspPassword);
@@ -164,17 +164,17 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
     return;
   }
 
-  Serial.print("Message arrived in topic: ");
+  Serial.print(F("Message arrived in topic: "));
   Serial.println(topic);
-  Serial.print("Message Length: ");
+  Serial.print(F("Message Length: "));
   Serial.println(length);
-  Serial.print("Message:");
+  Serial.print(F("Message:"));
 
   StaticJsonDocument<10000> doc;
   DeserializationError error = deserializeJson(doc, payload, length);
 
   if (error) {
-    Serial.print("deserializeJson() failed: ");
+    Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.c_str());
     return;
   }
@@ -186,7 +186,7 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
   CurrentStage = doc["print"]["stg_cur"];
 
 
-  Serial.print("stg_cur: ");
+  Serial.print(F("stg_cur: "));
   Serial.println(CurrentStage);
 
   if (doc["print"]["gcode_state"] == "FINISH" && finishstartms <= 0){
@@ -203,7 +203,7 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
       };
   }
 
-  Serial.print("HMS error: ");
+  Serial.print(F("HMS error: "));
   Serial.println(hasHMSerror);
 
   if (!doc["print"].containsKey("lights_report")) {
@@ -212,11 +212,11 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
 
   ledstate = doc["print"]["lights_report"][0]["mode"] == "on";
 
-  Serial.print("cur_led: ");
+  Serial.print(F("cur_led: "));
   Serial.println(ledstate);
 
 
-  Serial.println(" - - - - - - - - - - - -");
+  Serial.println(F(" - - - - - - - - - - - -"));
 
   handleLed();
 }
@@ -237,10 +237,9 @@ void setup() { // Setup function
   WiFi.hostname("bambuledcontroller");
 
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Failed to connect to WiFi, creating access point...");
-    WiFiManager wifiManager;
+    Serial.println(F("Failed to connect to WiFi, creating access point..."));
     wifiManager.setAPCallback([](WiFiManager* mgr) {
-      Serial.println("Access point created, connect to:");
+      Serial.println(F("Access point created, connect to:"));
       Serial.print(mgr->getConfigPortalSSID());
     });
     wifiManager.setConfigPortalTimeout(300);
@@ -249,13 +248,13 @@ void setup() { // Setup function
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(10);
-    Serial.println("Connecting to Wi-Fi...");
+    Serial.println(F("Connecting to Wi-Fi..."));
   }
 
   readFromEEPROM(Printerip,Printercode,PrinterID,EspPassword);
 
   if (strchr(EspPassword, '#') == NULL) { //Isue with eeprom giving �, so adding a # to check if the eeprom is empty or not
-    Serial.println("No Password has been set, Resetting");
+    Serial.println(F("No Password has been set, Resetting"));
     memset(EspPassword, 0, Max_EspPassword);
     memset(Printercode, '_', Max_accessCode);
     memset(PrinterID, '_', Max_DeviceId);
@@ -267,15 +266,15 @@ void setup() { // Setup function
     readFromEEPROM(Printerip,Printercode,PrinterID,EspPassword); //This will auto clear the eeprom
   };
 
-  Serial.print("Connected to WiFi, IP address: ");
+  Serial.print(F("Connected to WiFi, IP address: "));
   Serial.println(WiFi.localIP());
-  Serial.println("-------------------------------------");
-  Serial.print("Head over to http://");
+  Serial.println(F("-------------------------------------"));
+  Serial.print(F("Head over to http://"));
   Serial.println(WiFi.localIP());
-  Serial.print("Login Details User: BLLC, Password: ");
+  Serial.print(F("Login Details User: BLLC, Password: "));
   Serial.println(String(EspPassword));
-  Serial.println(" To configure the mqtt settings.");
-  Serial.println("-------------------------------------");
+  Serial.println(F(" To configure the mqtt settings."));
+  Serial.println(F("-------------------------------------"));
 
   SetupWebpage();
 
@@ -285,22 +284,24 @@ void setup() { // Setup function
 
 void loop() { //Loop function
   server.handleClient();
-  if (WiFi.status() != WL_CONNECTED){
-    Serial.println("No Connection!");
-  }
-  if (strlen(Printerip) > 0 && (lastmqttconnectionattempt <= 0 || millis() - lastmqttconnectionattempt >= 5000)){
+if (WiFi.status() != WL_CONNECTED){
+    Serial.println(F("Connection lost! Reconnecting..."));
+    wifiManager.autoConnect(wifiname);
+    Serial.println(F("Connected to WiFi!"));
+}
+  if (WiFi.status() == WL_CONNECTED && strlen(Printerip) > 0 && (lastmqttconnectionattempt <= 0 || millis() - lastmqttconnectionattempt >= 5000)){
     if (!mqttClient.connected()) {
       char DeviceName[20];
       strcpy(DeviceName, "ESP8266MQTT");
       char* randomString = generateRandomString(4);
       strcat(DeviceName, randomString);
 
-      Serial.print("Connecting with device name:");
+      Serial.print(F("Connecting with device name:"));
       Serial.println(DeviceName);
-      Serial.println("Connecting to mqtt");
+      Serial.println(F("Connecting to mqtt"));
       
       if (mqttClient.connect(DeviceName, "bblp", Printercode)){
-        Serial.println("Connected to MQTT");
+        Serial.println(F("Connected to MQTT"));
         setLedColor(0,0,0,0,0); //Turn off led printer might be offline
         char mqttTopic[50];
         strcpy(mqttTopic, "device/");
@@ -319,7 +320,6 @@ void loop() { //Loop function
       }
     }
   }
-  //Serial.print("Memory:");
-  //Serial.println(ESP.getFreeHeap());
+  //Serial.printf("Free heap: %u\n", ESP.getFreeHeap());
   mqttClient.loop();
 }
