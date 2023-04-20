@@ -19,6 +19,7 @@ char Printerip[Max_ipLength+1] = "";
 char Printercode[Max_accessCode+1] = ""; 
 char PrinterID[Max_DeviceId+1] = "";
 char EspPassword[Max_EspPassword+1] = "";
+char DeviceName[20];
 
 int CurrentStage = -1;
 bool hasHMSerror = false;
@@ -232,6 +233,7 @@ void setup() { // Setup function
   WiFiClient.setInsecure();
   mqttClient.setBufferSize(10000);
 
+  if (wifiManager.getWiFiIsSaved()) wifiManager.setEnableConfigPortal(false);
   wifiManager.autoConnect(wifiname);
 
   WiFi.hostname("bambuledcontroller");
@@ -278,6 +280,10 @@ void setup() { // Setup function
 
   SetupWebpage();
 
+  strcpy(DeviceName, "ESP8266MQTT");
+  char* randomString = generateRandomString(4);
+  strcat(DeviceName, randomString);
+
   mqttClient.setServer(Printerip, 8883);
   mqttClient.setCallback(PrinterCallback);
 }
@@ -286,15 +292,12 @@ void loop() { //Loop function
   server.handleClient();
 if (WiFi.status() != WL_CONNECTED){
     Serial.println(F("Connection lost! Reconnecting..."));
-    wifiManager.autoConnect(wifiname);
-    Serial.println(F("Connected to WiFi!"));
+    //wifiManager.autoConnect(wifiname);
+    //Serial.println(F("Connected to WiFi!"));
+    ESP.restart();
 }
-  if (WiFi.status() == WL_CONNECTED && strlen(Printerip) > 0 && (lastmqttconnectionattempt <= 0 || millis() - lastmqttconnectionattempt >= 5000)){
+  if (WiFi.status() == WL_CONNECTED && strlen(Printerip) > 0 && (lastmqttconnectionattempt <= 0 || millis() - lastmqttconnectionattempt >= 10000)){
     if (!mqttClient.connected()) {
-      char DeviceName[20];
-      strcpy(DeviceName, "ESP8266MQTT");
-      char* randomString = generateRandomString(4);
-      strcat(DeviceName, randomString);
 
       Serial.print(F("Connecting with device name:"));
       Serial.println(DeviceName);
@@ -315,11 +318,12 @@ if (WiFi.status() != WL_CONNECTED){
         setPins(0,0,0,0,0); //Turn off led printer is offline and or the given information is wrong
         Serial.print("failed, rc=");
         Serial.print(mqttClient.state());
-        Serial.println(" try again in 5 seconds");
+        Serial.println(" try again in 10 seconds");
         lastmqttconnectionattempt = millis();
       }
     }
   }
   //Serial.printf("Free heap: %u\n", ESP.getFreeHeap());
   mqttClient.loop();
+  delay(10);
 }
