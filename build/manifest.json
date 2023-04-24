@@ -1,6 +1,6 @@
 {
   "name": "bambulabledcontroller",
-  "version": "1.0.4A",
+  "version": "1.0.4",
   "new_install_prompt_erase": true,
   "builds": [
     {
