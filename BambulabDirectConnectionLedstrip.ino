@@ -171,7 +171,7 @@ void PrinterCallback(char* topic, byte* payload, unsigned int length){ //Functio
   Serial.println(length);
   Serial.print(F("Message:"));
 
-  StaticJsonDocument<11000> doc;
+  StaticJsonDocument<11500> doc;
   DeserializationError error = deserializeJson(doc, payload, length);
 
   if (error) {
@@ -231,7 +231,7 @@ void setup() { // Setup function
   setPins(0,0,0,0,0);
 
   WiFiClient.setInsecure();
-  mqttClient.setBufferSize(11000);
+  mqttClient.setBufferSize(11500);
 
   if (wifiManager.getWiFiIsSaved()) wifiManager.setEnableConfigPortal(false);
   wifiManager.autoConnect(wifiname);
