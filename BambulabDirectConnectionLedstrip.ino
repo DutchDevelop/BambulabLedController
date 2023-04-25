@@ -84,7 +84,13 @@ void setup() {
   Serial.println(custom_mqtt_ip.getValue());
   Serial.println(custom_mqtt_code.getValue());
   Serial.println(custom_mqtt_serial.getValue());
+
+  Serial.println("--------------------------");
   
+  Serial.println(printer_ip);
+  Serial.println(access_code);
+  Serial.println(serial_id);
+
   if (shouldSaveConfig) {
     Serial.println("saving config");
     DynamicJsonDocument jsonDoc(1024);
