@@ -4,9 +4,9 @@
 #include <ArduinoJson.h> 
 #include <WiFiClientSecure.h>
 
-char printer_ip[15];
-char access_code[8];
-char serial_id[15];
+char printer_ip[16];
+char access_code[10];
+char serial_id[16];
 
 bool shouldSaveConfig = false;
 
@@ -22,6 +22,9 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println("mounting FS");
+
+  WiFiClient.setInsecure();
+  mqttClient.setBufferSize(14000);
 
   if (SPIFFS.begin()) {
     Serial.println("mounted FS");
@@ -84,6 +87,13 @@ void setup() {
   Serial.println(custom_mqtt_ip.getValue());
   Serial.println(custom_mqtt_code.getValue());
   Serial.println(custom_mqtt_serial.getValue());
+
+  Serial.println("------------------------------------");
+
+  Serial.println(printer_ip);
+  Serial.println(access_code);
+  Serial.println(serial_id);
+  
   
   if (shouldSaveConfig) {
     Serial.println("saving config");
@@ -101,8 +111,45 @@ void setup() {
     serializeJson(jsonDoc, Serial);
     configFile.close();
   }
+
+  mqttClient.setServer(printer_ip, 8883);
+  mqttClient.setCallback(PrinterCallback);
+}
+
+void PrinterCallback(char* topic, byte* payload, unsigned int length){
+  if (length < 7682) {
+    return;
+  }
+  Serial.print(F("Message arrived in topic: "));
+  Serial.println(topic);
+  Serial.print(F("Message Length: "));
+  Serial.println(length);
+}
+
+void mqttreconnect(){
+  char mqttTopic[30];
+  strcpy(mqttTopic, "device/");
+  strcat(mqttTopic, serial_id);
+  strcat(mqttTopic, "/report");
+  while (!mqttClient.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    if (mqttClient.connect("ESP8266Client", "bblp", access_code)) {
+      Serial.println("connected");
+      Serial.println("Subscribing to topic");
+      mqttClient.subscribe(mqttTopic);
+      Serial.println("Subscribed to topic");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println(" try again in 5 seconds");
+      delay(5000);
+    }
+  }
 }
 
 void loop() {
-
+  if (!mqttClient.connected()) {
+    mqttreconnect();
+  }
+  mqttClient.loop();
 }

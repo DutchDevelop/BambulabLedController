@@ -1,12 +1,12 @@
 {
   "name": "bambulabledcontroller",
-  "version": "1.0.4",
+  "version": "0.0.1",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP8266",
       "parts": [
-        { "path": "firmware/blledcontroller_v104.bin", "offset": 0 }
+        { "path": "firmware/test2.bin", "offset": 0 }
         ]
     }
   ]
