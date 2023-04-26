@@ -93,8 +93,7 @@ void setup() {
   Serial.println(printer_ip);
   Serial.println(access_code);
   Serial.println(serial_id);
-  
-  
+
   if (shouldSaveConfig) {
     Serial.println("saving config");
     DynamicJsonDocument jsonDoc(1024);
