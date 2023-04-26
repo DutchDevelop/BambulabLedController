@@ -24,7 +24,7 @@ void setup() {
   Serial.println("mounting FS");
 
   WiFiClient.setInsecure();
-  mqttClient.setBufferSize(14000);
+  mqttClient.setBufferSize(14500);
 
   if (SPIFFS.begin()) {
     Serial.println("mounted FS");
@@ -116,7 +116,7 @@ void setup() {
 }
 
 void PrinterCallback(char* topic, byte* payload, unsigned int length){
-  if (length < 7682) {
+  if (length < 500) {
     return;
   }
   Serial.print(F("Message arrived in topic: "));
