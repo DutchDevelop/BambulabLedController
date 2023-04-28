@@ -325,5 +325,4 @@ if (WiFi.status() != WL_CONNECTED){
   }
   //Serial.printf("Free heap: %u\n", ESP.getFreeHeap());
   mqttClient.loop();
-  delay(10);
 }
