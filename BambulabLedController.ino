@@ -26,8 +26,6 @@ bool hasHMSerror = false;
 bool ledstate = false;
 unsigned long finishstartms;
 unsigned long lastmqttconnectionattempt;
-bool needsPushAllFlag = false;
-unsigned long pushAllRequested = 0UL;
 
 ESP8266WebServer server(80);
 IPAddress apIP(192, 168, 1, 1);
@@ -112,17 +110,6 @@ void handleSetTemperature() {
     mqttClient.publish(mqttTopic, message.c_str());
   }
   return server.send(200, "text/plain", "Ok");
-}
-
-void handlePushAll() {
-  char mqttTopic[50];
-  strcpy(mqttTopic, "device/");
-  strcat(mqttTopic, PrinterID);
-  strcat(mqttTopic, "/request");
-  String message = "{\"pushing\":{\"sequence_id\":\"0\",\"command\":\"start\"}}";
-  mqttClient.publish(mqttTopic, message.c_str());
-  message = "{\"pushing\":{\"sequence_id\":\"1\",\"command\":\"pushall\"}}";
-  mqttClient.publish(mqttTopic, message.c_str());
 }
 
 void handleSetupRoot() { //Function to handle the setuppage
@@ -332,8 +319,6 @@ if (WiFi.status() != WL_CONNECTED){
         Serial.println("Topic: ");
         Serial.println(mqttTopic);
         mqttClient.subscribe(mqttTopic);
-        needsPushAllFlag = true;
-        pushAllRequested = millis();
         lastmqttconnectionattempt;
       } else {
         setPins(0,0,0,0,0); //Turn off led printer is offline and or the given information is wrong
@@ -341,17 +326,9 @@ if (WiFi.status() != WL_CONNECTED){
         Serial.print(mqttClient.state());
         Serial.println(" try again in 10 seconds");
         lastmqttconnectionattempt = millis();
-        needsPushAllFlag = false;
       }
     }
   }
-  
-  if(needsPushAllFlag && mqttClient.connected() && millis() - pushAllRequested >= 10000) {
-    handlePushAll();
-    needsPushAllFlag = false;
-    pushAllRequested = 0UL;
-  }
-  
   //Serial.printf("Free heap: %u\n", ESP.getFreeHeap());
   mqttClient.loop();
 }
